@@ -1,174 +1,268 @@
-﻿import { defineStore } from "pinia";
-import { ref, computed } from "vue";
+import { defineStore } from 'pinia'
+import { ref, computed, onScopeDispose } from 'vue'
+import { getSupabaseClient } from '@/lib/supabase'
+import { readIdentity, readStudentData, studentSignIn, type Row } from '@/services/portal'
 
 export interface Course {
-  code: string;
-  name: string;
-  type: "CORE" | "ELECTIVE";
+  id: string
+  code: string
+  name: string
+  type: string
 }
 export interface Payment {
-  date: string;
-  type: string;
-  description: string;
-  currency: string;
-  amount: number;
-  balance: number;
+  id: string
+  date: string
+  type: string
+  description: string
+  currency: string
+  amount: number
+  balance: number
 }
+export interface Result {
+  id: string
+  code: string
+  name: string
+  credits: number
+  grade: string
+  score: number | null
+}
+const emptyStudent = () => ({
+  name: '',
+  studentNumber: '',
+  programme: 'Not provided',
+  programmeName: 'Not provided',
+  academicYear: 'Not provided',
+  part: null as number | null,
+  semester: null as number | null,
+  registrationStatus: 'Not provided',
+  feesBalance: null as number | null,
+})
 
-export const useStudentPortalStore = defineStore("studentPortal", () => {
-  const isAuthenticated = ref(false);
+export const useStudentPortalStore = defineStore('studentPortal', () => {
+  const isAuthenticated = ref(false)
+  const isStaff = ref(false)
+  const student = ref(emptyStudent())
+  const assignments = ref<{ role: string; offering_id: string | null }[]>([])
+  const courses = ref<Course[]>([])
+  const zigPayments = ref<Payment[]>([])
+  const usdPayments = ref<Payment[]>([])
+  const examResults = ref<Result[]>([])
+  const resources = ref<Row<'resources'>[]>([])
+  const exams = ref<Row<'exam_sessions'>[]>([])
+  const gpa = computed(() => 'Not configured')
+  const loading = ref(false)
+  const errorMessage = ref('')
+  let initialized: Promise<void> | undefined
+  let unsubscribe: (() => void) | undefined
+  let epoch = 0
+  let activeUserId: string | undefined
+  let expiryTimer: ReturnType<typeof setTimeout> | undefined
 
-  const student = ref({
-    name: "Tadiwa Dzarira",
-    idNumber: "63-2448875D22",
-    studentNumber: "N02530064B",
-    programme: "SCS",
-    programmeName: "Bachelor of Science in Computer Science",
-    address: "Block 59 I, Harare, Zimbabwe",
-    phone: "263737960740",
-    gender: "Male",
-    dob: "2005-10-05",
-    placeOfBirth: "Harare",
-    academicYear: "2026",
-    part: 2,
-    semester: 1,
-    registrationStatus: "REGISTERED",
-    feesBalance: -0.68,
-    paymentPlan: false,
-    libraryFines: 0.00,
-  });
-
-  const courses = ref<Course[]>([
-    { code: "SCS2104", name: "Systems Analysis and Design", type: "CORE" },
-    { code: "SCS2108", name: "Object Oriented Software Concepts and Development", type: "CORE" },
-    { code: "SCS2110", name: "Research Methods", type: "CORE" },
-    { code: "SCS2111", name: "Data Communications and Computer Networks", type: "CORE" },
-    { code: "SCS2114", name: "Web Development", type: "CORE" },
-    { code: "SORS2110", name: "Introduction to Applied Statistics", type: "CORE" },
-  ]);
-
-  const zigPayments = ref<Payment[]>([
-    {
-      date: "2026-02-07",
-      type: "PAYMENT",
-      description: "Tuition Fees",
-      currency: "ZIG",
-      amount: -7620,
-      balance: -257.76,
-    },
-    {
-      date: "2026-02-07",
-      type: "PAYMENT",
-      description: "Tuition Fees",
-      currency: "ZIG",
-      amount: -6000,
-      balance: -234.46,
-    },
-    {
-      date: "2025-12-31",
-      type: "INVOICE",
-      description: "Debtors Rev Profit on Exchange rate",
-      currency: "ZIG",
-      amount: 28.11,
-      balance: 0.0,
-    },
-    {
-      date: "2025-08-25",
-      type: "PAYMENT",
-      description: "Tuition Fees",
-      currency: "ZIG",
-      amount: -18090,
-      balance: -675.95,
-    },
-  ]);
-
-  const usdPayments = ref<Payment[]>([
-    {
-      date: "2026-08-24",
-      type: "INVOICE",
-      description: "UG-P2SP1-SCS-2025-BYO-2-Y2-S1",
-      currency: "USD",
-      amount: 745,
-      balance: 0,
-    },
-    {
-      date: "2026-02-11",
-      type: "INVOICE",
-      description: "UG-P2SP1-SCS-2025-BYO-2-Y1-S2",
-      currency: "USD",
-      amount: 745,
-      balance: 0,
-    },
-    {
-      date: "2025-08-28",
-      type: "INVOICE",
-      description: "UG-P2SP1-SCS-2025-BYO-2-Y1-S1",
-      currency: "USD",
-      amount: 745,
-      balance: 0,
-    },
-    {
-      date: "2025-06-26",
-      type: "PAYMENT",
-      description: "Tuition Fees",
-      currency: "USD",
-      amount: -75,
-      balance: 0,
-    },
-  ]);
-
-  const examResults = ref([
-    { code: "SCS1101", name: "Fundamentals of Programming", credits: 12, grade: "A", score: 78 },
-    { code: "SCS1102", name: "Computer Organisation", credits: 10, grade: "B+", score: 69 },
-    { code: "SCS1103", name: "Discrete Mathematics", credits: 10, grade: "B", score: 62 },
-    { code: "SCS1104", name: "Systems Analysis & Design I", credits: 12, grade: "A-", score: 74 },
-    { code: "SCS1201", name: "Data Structures", credits: 12, grade: "A", score: 80 },
-    { code: "SCS1202", name: "Database Systems", credits: 10, grade: "B+", score: 71 },
-  ]);
-
-  const gradePoints: Record<string, number> = {
-    A: 4,
-    "A-": 3.7,
-    "B+": 3.5,
-    B: 3,
-    "B-": 2.7,
-    C: 2,
-    D: 1,
-    F: 0,
-  };
-
-  const gpa = computed(() => {
-    const totalCredits = examResults.value.reduce((total, result) => total + result.credits, 0);
-    if (totalCredits === 0) return "0.00";
-
-    const weightedPoints = examResults.value.reduce(
-      (total, result) => total + (gradePoints[result.grade] ?? 0) * result.credits,
-      0,
-    );
-
-    return (weightedPoints / totalCredits).toFixed(2);
-  });
-
-  function login(studentNumber: string, password: string) {
-    const validCredentials =
-      studentNumber === student.value.studentNumber && password === "portal123";
-    isAuthenticated.value = validCredentials;
-    return validCredentials;
+  function clearData() {
+    student.value = emptyStudent()
+    courses.value = []
+    zigPayments.value = []
+    usdPayments.value = []
+    examResults.value = []
+    resources.value = []
+    exams.value = []
+  }
+  function clearSession() {
+    epoch++
+    activeUserId = undefined
+    clearTimeout(expiryTimer)
+    clearData()
+    isAuthenticated.value = false
+    isStaff.value = false
+    assignments.value = []
+    loading.value = false
   }
 
-  function logout() {
-    isAuthenticated.value = false;
+  async function loadData() {
+    const request = ++epoch
+    clearData()
+    loading.value = true
+    errorMessage.value = ''
+    try {
+      const identity = await readIdentity()
+      if (request !== epoch) return false
+      if (!identity.student && !identity.assignments.length)
+        throw new Error('Account not linked.')
+      activeUserId = identity.user.id
+      assignments.value = identity.assignments
+      isStaff.value = identity.assignments.length > 0
+      isAuthenticated.value = true
+      if (isStaff.value) return true
+      const s = identity.student!
+      const data = await readStudentData()
+      if (request !== epoch) return false
+      student.value = {
+        ...emptyStudent(),
+        name: s.display_name,
+        studentNumber: s.student_number,
+        programme: s.programme_code,
+        programmeName: s.programme_name ?? s.programme_code,
+        academicYear: s.academic_year ?? 'Not provided',
+        part: s.part,
+        semester: s.semester,
+        registrationStatus: s.registration_status ?? 'Not provided',
+      }
+      const courseFor = (offeringId: string) => {
+        const offering = data.offerings.find((o) => o.id === offeringId)
+        const course = data.courses.find((c) => c.id === offering?.course_id)
+        return {
+          id: offeringId,
+          code: course?.code ?? 'Unavailable',
+          name: course?.name ?? 'Course unavailable',
+          credits: offering?.credits ?? 0,
+        }
+      }
+      courses.value = data.enrollments.map((e) => ({
+        ...courseFor(e.offering_id),
+        type: 'ENROLLED',
+      }))
+      examResults.value = data.results.map((r) => {
+        const enrollment = data.enrollments.find((e) => e.id === r.enrollment_id)
+        return {
+          ...courseFor(enrollment?.offering_id ?? ''),
+          id: r.id,
+          grade: r.grade,
+          score: r.score,
+        }
+      })
+      const transactions = data.transactions
+        .sort((a, b) => b.occurred_on.localeCompare(a.occurred_on) || b.id.localeCompare(a.id))
+        .map((t) => ({
+          id: t.id,
+          date: t.occurred_on,
+          type: t.transaction_type,
+          description: t.description,
+          currency: t.currency,
+          amount: t.amount,
+          balance: t.balance,
+        }))
+      zigPayments.value = transactions.filter((t) => t.currency === 'ZIG')
+      usdPayments.value = transactions.filter((t) => t.currency === 'USD')
+      // Same-day transactions have no authoritative sequence; don't infer a total balance.
+      resources.value = data.resources.filter((r) => r.published)
+      exams.value = data.exams
+        .filter((e) => e.published)
+        .sort((a, b) => a.starts_at.localeCompare(b.starts_at))
+      return true
+    } catch (error) {
+      if (request !== epoch) return false
+      clearData()
+      if (error instanceof Error && error.message.includes('session has expired')) {
+        clearSession()
+        errorMessage.value = error.message
+      } else
+        errorMessage.value =
+          'Portal records could not be loaded. Retry, or sign out and contact the registry.'
+      return false
+    } finally {
+      if (request === epoch) loading.value = false
+    }
   }
 
+  async function initialize() {
+    if (initialized) return initialized
+    initialized = (async () => {
+      try {
+        const client = getSupabaseClient()
+        const { data, error } = await client.auth.getSession()
+        if (error) throw error
+        const listener = client.auth.onAuthStateChange((event, session) => {
+          // Synchronous: Supabase holds its auth lock in this callback.
+          if (session && activeUserId && session.user.id !== activeUserId) {
+            clearSession()
+            errorMessage.value = 'The signed-in account changed. Please sign in again.'
+          }
+          if (session?.expires_at) {
+            clearTimeout(expiryTimer)
+            expiryTimer = setTimeout(
+              () => {
+                clearSession()
+                errorMessage.value = 'Your session has expired. Please sign in again.'
+              },
+              Math.max(0, session.expires_at * 1000 - Date.now()),
+            )
+          }
+          if (event === 'SIGNED_OUT' || (event === 'TOKEN_REFRESHED' && !session)) {
+            clearSession()
+            errorMessage.value = 'Your session ended. Please sign in again.'
+          }
+        })
+        unsubscribe = () => listener.data.subscription.unsubscribe()
+        if (data.session) await loadData()
+      } catch {
+        clearSession()
+        errorMessage.value =
+          'Unable to restore your session. Check the connection and sign in again.'
+      }
+    })()
+    return initialized
+  }
+
+  async function login(number: string, password: string, staff = false) {
+    await initialize()
+    clearSession()
+    errorMessage.value = ''
+    try {
+      if (staff) {
+        const { error } = await getSupabaseClient().auth.signInWithPassword({
+          email: number,
+          password,
+        })
+        if (error) throw error
+      } else await studentSignIn(number, password)
+      if (!(await loadData()) || isStaff.value !== staff) {
+        await logout()
+        errorMessage.value =
+          'This account cannot access this workspace. Contact the registry or ICT.'
+        return false
+      }
+      return true
+    } catch {
+      await logout()
+      errorMessage.value =
+        'Unable to sign in. Check your credentials and connection, or try again later.'
+      return false
+    }
+  }
+
+  async function logout() {
+    clearSession()
+    try {
+      const { error } = await getSupabaseClient().auth.signOut({ scope: 'local' })
+      if (error)
+        errorMessage.value =
+          'Local data cleared. Sign-out could not be confirmed; retry when connected.'
+      else errorMessage.value = ''
+    } catch {
+      errorMessage.value = 'Local data cleared. Check your connection before signing in again.'
+    }
+  }
+  onScopeDispose(() => {
+    unsubscribe?.()
+    clearTimeout(expiryTimer)
+  })
   return {
     student,
     courses,
     zigPayments,
     usdPayments,
     examResults,
+    resources,
+    exams,
     gpa,
     isAuthenticated,
+    isStaff,
+    assignments,
+    loading,
+    errorMessage,
+    initialize,
+    loadData,
     login,
     logout,
-  };
-});
+  }
+})

@@ -1,15 +1,19 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@/types/database'
 
-let client: SupabaseClient | undefined
+type PortalClient = SupabaseClient<Database, 'fieldnotes'>
+let client: PortalClient | undefined
 
-/** Optional connection: the existing demo runs without Supabase credentials. */
-export function getSupabaseClient(): SupabaseClient {
+/** Required live connection. Missing configuration never enables demo access. */
+export function getSupabaseClient(): PortalClient {
   if (client) return client
 
   const url = import.meta.env.VITE_SUPABASE_URL?.trim()
   const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim()
   if (!url || !key) {
-    throw new Error('Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in .env.local, then restart Vite.')
+    throw new Error(
+      'Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in .env.local, then restart Vite.',
+    )
   }
   let parsed: URL
   try {
@@ -22,10 +26,12 @@ export function getSupabaseClient(): SupabaseClient {
     throw new Error('Supabase requires HTTPS, except for local development.')
   }
   if (!key.startsWith('sb_publishable_')) {
-    throw new Error('Use a Supabase publishable key (sb_publishable_...), never a secret or service_role key.')
+    throw new Error(
+      'Use a Supabase publishable key (sb_publishable_...), never a secret or service_role key.',
+    )
   }
 
-  client = createClient(url, key)
+  client = createClient<Database, 'fieldnotes'>(url, key, { db: { schema: 'fieldnotes' } })
   return client
 }
 
@@ -38,6 +44,8 @@ export async function checkSupabaseConnection(): Promise<void> {
     signal: AbortSignal.timeout(10000),
   })
   if (!response.ok) {
-    throw new Error(`Supabase connection check failed (HTTP ${response.status}). Check the project URL and publishable key.`)
+    throw new Error(
+      `Supabase connection check failed (HTTP ${response.status}). Check the project URL and publishable key.`,
+    )
   }
 }

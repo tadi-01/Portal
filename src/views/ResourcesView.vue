@@ -1,7 +1,30 @@
-﻿<template><div><div class="eyebrow">RESOURCES / YOUR STUDY ROOM</div><h1 class="page-masthead">Follow your curiosity.</h1><p class="page-intro">A home for the materials that support your learning, from the first lecture to the final paper.</p><div class="col-2"><section v-for="resource in resources" :key="resource.number" class="resource-panel"><small>{{ resource.number }} / {{ resource.label }}</small><h2>{{ resource.title }}</h2><p>{{ resource.text }}</p><span class="resource-status">Connection not configured</span></section></div><div class="personal-record"><h3>Looking for a particular course?</h3><p style="margin:10px 0 18px;color:var(--clr-text-muted)">Use your registered course list to find its code and full title.</p><RouterLink to="/courses" class="btn btn--ghost">Browse your courses ↗</RouterLink></div></div></template>
 <script setup lang="ts">
-const resources = [
-{ number: '01', label: 'LEARNING PLATFORM', title: 'The lecture continues.', text: 'Lecture notes, assignments and online quizzes belong in your learning platform. Its destination has not been configured for this prototype.' },
-{ number: '02', label: 'DIGITAL LIBRARY', title: 'Read a little further.', text: 'E-books, academic journals and research papers support independent study. A library service can be linked here when available.' }]
+import { useStudentPortalStore } from '@/stores/studentPortalStore'
+import { safeResourceUrl } from '@/lib/resourceUrl'
+const store = useStudentPortalStore()
 </script>
-<style scoped>.resource-panel{padding:38px;border:1px solid var(--clr-border);border-top:4px solid var(--clr-primary)}.resource-panel:nth-child(2){background:#e8e8dc;border-top-color:#68745b}.resource-panel small{color:var(--clr-text-muted)}.resource-panel h2{font-size:36px;margin:38px 0 18px}.resource-panel p{color:var(--clr-text-mid);max-width:450px}.resource-status{display:block;margin-top:35px;font:11px var(--font-mono);border-top:1px solid var(--clr-border);padding-top:18px}</style>
+<template>
+  <div>
+    <div class="eyebrow">RESOURCES / YOUR STUDY ROOM</div>
+    <h1 class="page-masthead">Follow your curiosity.</h1>
+    <p class="page-intro">Published materials for your enrolled courses.</p>
+    <p v-if="!store.resources.length" class="empty-panel">
+      No course resources have been published yet.
+    </p>
+    <article v-for="resource in store.resources" :key="resource.id" class="course-row">
+      <div>
+        <small>{{ store.courses.find((c) => c.id === resource.offering_id)?.code }}</small>
+        <h2>{{ resource.title }}</h2>
+        <a
+          v-if="safeResourceUrl(resource.url)"
+          :href="safeResourceUrl(resource.url)"
+          target="_blank"
+          rel="noopener noreferrer"
+          >Open resource (new tab) ?</a
+        >
+        <p v-else>Resource address unavailable. Contact your lecturer.</p>
+      </div>
+    </article>
+    <RouterLink to="/courses" class="btn btn--ghost">Browse your courses ?</RouterLink>
+  </div>
+</template>
