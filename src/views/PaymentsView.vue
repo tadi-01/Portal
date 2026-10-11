@@ -1,0 +1,8 @@
+﻿<template><div><div class="eyebrow">FINANCE / STUDENT ACCOUNT</div><h1 class="page-masthead">The account ledger.</h1><div class="split-page"><aside class="side-note"><small>OVERALL BALANCE · USD</small><h2 style="font-size:52px;margin-top:12px">{{ store.student.feesBalance.toFixed(2) }}</h2><p>{{ store.student.name }}<br>{{ store.student.studentNumber }}</p><p>Payment plan: {{ store.student.paymentPlan ? 'Active' : 'Not active' }}<br>Library fines: {{ store.student.libraryFines }}</p><p>Negative entries represent payments or credit. Currency ledgers are shown separately.</p><button class="btn btn--ghost print-button" style="margin-top:24px" @click="printStatement">Print statement ↗</button></aside><div><section v-for="ledger in ledgers" :key="ledger.currency" class="section-card" style="margin-bottom:24px"><header class="section-header-bar">{{ ledger.currency }} / TRANSACTION HISTORY</header><div class="table-scroll"><table class="data-table"><thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Amount</th><th>Balance</th></tr></thead><tbody><tr v-for="pay in ledger.entries" :key="pay.date + pay.amount"><td>{{ pay.date }}</td><td>{{ pay.description }}</td><td>{{ pay.type }}</td><td>{{ pay.amount.toFixed(2) }}</td><td>{{ pay.balance.toFixed(2) }}</td></tr></tbody></table></div></section></div></div></div></template>
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useStudentPortalStore } from '@/stores/studentPortalStore'
+const store = useStudentPortalStore()
+const ledgers = computed(() => [{ currency: 'ZiG', entries: store.zigPayments }, { currency: 'USD', entries: store.usdPayments }])
+function printStatement() { window.print() }
+</script>
