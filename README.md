@@ -1,29 +1,89 @@
-﻿# Fieldnotes
+# Fieldnotes
 
-A student workspace built with Vue 3, TypeScript, Pinia, Vue Router and Vite. The independent editorial design retains the original student data and application logic.
+Fieldnotes is a Vue 3 and TypeScript student portal with a separate Supabase-
+backed admin workspace.
 
-## Run
+## Requirements
 
-Requires Node.js `^22.18.0 || >=24.12.0`. On Windows use `npm.cmd` if PowerShell blocks `npm.ps1`.
+- Node.js `^22.18.0 || >=24.12.0`
+- A linked Supabase development project
 
-```sh
-npm install
-npm run dev
-npm run build
+## Run locally
+
+On Windows, use `npm.cmd` if PowerShell blocks `npm`:
+
+```powershell
+Copy-Item .env.example .env.local
+# Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in .env.local
+npm.cmd ci
+npm.cmd run dev
 ```
 
-See [PRESENTATION_NOTES.md](PRESENTATION_NOTES.md) for the architecture, data flow, demo walkthrough, design decisions and current prototype limitations.
+Open `http://localhost:5173`.
 
-The application uses in-memory sample records and demo authentication. It has no connected backend, persistent storage, registration submission or payment integration. A client-side route guard requires demo sign-in before portal navigation. This is not server-side access control.
+## Roles and routes
 
-## Optional Supabase connection
+- Student login: `/login`
+- Admin login: `/staff/login`
+- Student workspace: `/`
+- Admin workspace: `/staff`
 
-Follow [SUPABASE_SETUP.md](SUPABASE_SETUP.md). The reusable client supports a project URL and publishable key through an ignored `.env.local` file. The existing demo remains usable without configuration. Supabase authentication and database-backed student records are not yet wired to the UI.
+There are only two application roles: `student` and `admin`. Admins perform
+teaching, review, approval and resource-management duties across all configured
+courses. Role assignment is performed through trusted Supabase management tools,
+never from the browser.
 
-## Repository and deployment
+See [PRESENTATION.md](PRESENTATION.md) for the architecture, user journeys,
+demonstration checklist and current limitations.
 
-Run `npm run lint:check` and `npm run build` before publishing source. GitHub Actions repeats these checks on pushes and pull requests. Build output is `dist/`; configure your web host to rewrite unknown application routes to `index.html`. Repository privacy does not make a deployed website private.
+## Supabase development setup
 
-The error `src refspec main does not match any` means there is no local commit/branch ref to push (this checkout initially had no commits). Once the first commit exists, use `git push -u origin main`. Confirm the destination is the intended private repository first.
+1. Authenticate the Supabase CLI:
 
-Only `.env.example` belongs in Git. Never commit `.env.local`, service keys, generated build output or `node_modules`. The retained demo student record includes personal details: review or replace these before inviting collaborators or deploying the app. See [RELEASE_READINESS.md](RELEASE_READINESS.md) for the inspection findings.
+   ```powershell
+   npx.cmd supabase login
+   ```
+
+2. Link the intended development project:
+
+   ```powershell
+   npx.cmd supabase link --project-ref <project-reference>
+   ```
+
+3. Preview and apply migrations:
+
+   ```powershell
+   npx.cmd supabase db push --linked --dry-run
+   npx.cmd supabase db push --linked
+   ```
+
+4. Deploy the student login function:
+
+   ```powershell
+   npx.cmd supabase functions deploy student-login --use-api
+   ```
+
+The private `fieldnotes_private` schema must remain unexposed. Never place a
+secret or service-role key in `.env.local` under a `VITE_*` name.
+
+## Verification
+
+```powershell
+npm.cmd run lint:check
+npm.cmd run type-check
+npm.cmd run build
+```
+
+## Repository layout
+
+```text
+src/                         Vue application
+scripts/                     Trusted local provisioning helpers
+supabase/migrations/         Database schema and authorization baseline
+supabase/functions/          Supabase Edge Functions
+supabase/checks/             Hosted database checks
+public/                      Static assets
+```
+
+Do not commit `.env.local`, service keys, `dist`, `node_modules` or other
+generated files.

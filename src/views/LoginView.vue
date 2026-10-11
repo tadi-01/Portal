@@ -1,9 +1,15 @@
 <template>
-  <div class="login-view"><aside class="login-story"><div class="eyebrow">FIELDNOTES / STUDENT ACCESS</div><h1>Your studies.<br>Your own rhythm.</h1><p>Courses, results and the details in between.<br>Keep your academic life in one place.</p><div class="login-rule">A new page starts here. ?</div></aside>
+  <div class="login-view">
+    <aside class="login-story">
+      <div class="eyebrow">FIELDNOTES / STUDENT ACCESS</div>
+      <h1>Your studies.<br />Your own rhythm.</h1>
+      <p>
+        Courses, results and the details in between.<br />Keep your academic life in one place.
+      </p>
+      <div class="login-rule">A new page starts here.</div>
+    </aside>
     <section class="login-card section-card">
-      <div class="section-header-bar">
-         STUDENT LOGIN
-      </div>
+      <div class="section-header-bar">STUDENT LOGIN</div>
 
       <div class="section-body">
         <h2 class="page-masthead">Welcome back.</h2>
@@ -12,24 +18,41 @@
         <form class="login-form" @submit.prevent="handleLogin">
           <div class="form-field">
             <label for="student-number">Student number</label>
-            <input id="student-number" v-model.trim="studentNumber" type="text" placeholder="Enter your student number" autocomplete="username" required />
+            <input
+              id="student-number"
+              v-model.trim="studentNumber"
+              type="text"
+              placeholder="Enter your student number"
+              autocomplete="username"
+              required
+            />
           </div>
 
           <div class="form-field">
             <label for="password">Password</label>
-            <input id="password" v-model="password" type="password" placeholder="Enter your password" autocomplete="current-password" required />
+            <input
+              id="password"
+              v-model="password"
+              type="password"
+              placeholder="Enter your password"
+              autocomplete="current-password"
+              required
+            />
           </div>
 
-          <div v-if="errorMessage" class="alert alert--danger" role="alert">
-            {{ errorMessage }}
+          <div v-if="errorMessage || store.errorMessage" class="alert alert--danger" role="alert">
+            {{ errorMessage || store.errorMessage }}
           </div>
 
-          <button class="btn btn--primary login-button" type="submit">Log in</button>
+          <button class="btn btn--primary login-button" type="submit" :disabled="busy">
+            {{ busy ? 'Signing in…' : 'Log in' }}
+          </button>
         </form>
 
-        <div class="alert alert--info demo-hint">
-          Demo credentials: <strong>{{ store.student.studentNumber }}</strong> / <strong>portal123</strong>
-        </div>
+        <p class="small-note">
+          Accounts are provided by the registry. Contact them if your account has not been
+          activated.
+        </p>
       </div>
     </section>
   </div>
@@ -37,30 +60,40 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { safeReturnPath } from '@/router/returnPath'
 import { useStudentPortalStore } from '@/stores/studentPortalStore'
 
 const router = useRouter()
+const route = useRoute()
 const store = useStudentPortalStore()
 const studentNumber = ref('')
 const password = ref('')
 const errorMessage = ref('')
+const busy = ref(false)
 
-function handleLogin() {
+async function handleLogin() {
+  if (busy.value) return
+  busy.value = true
   errorMessage.value = ''
 
-  if (!store.login(studentNumber.value, password.value)) {
-    errorMessage.value = 'The student number or password is incorrect.'
+  if (!(await store.login(studentNumber.value, password.value))) {
+    errorMessage.value = store.errorMessage
+    busy.value = false
     return
   }
 
-  router.push('/')
+  password.value = ''
+  await router.replace(safeReturnPath(router, route.query.redirect))
+  busy.value = false
 }
 </script>
 
 <style scoped>
 .login-view {
-  min-height: 60vh; grid-template-columns: 1.2fr 1fr; gap: 50px;
+  min-height: 60vh;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 50px;
   display: grid;
   place-items: center;
 }
@@ -94,7 +127,7 @@ function handleLogin() {
 .course-search,
 .grade-filter {
   width: 100%;
-  border: 1px solid var(--clr-border);
+  border: 1px solid var(--clr-control-border);
   border-radius: var(--r-md);
   padding: 9px 10px;
   color: var(--clr-text);
@@ -105,7 +138,8 @@ function handleLogin() {
 .form-field input:focus,
 .course-search:focus,
 .grade-filter:focus {
-  outline: 2px solid var(--clr-primary-light);
+  outline: 2px solid var(--clr-primary);
+  outline-offset: 3px;
   border-color: var(--clr-primary);
 }
 
@@ -113,7 +147,26 @@ function handleLogin() {
   justify-content: center;
 }
 
-.demo-hint {
-  margin-top: 20px;
+.login-story p {
+  margin-top: 24px;
+  color: var(--clr-text-muted);
 }
-.login-story p{margin-top:24px;color:var(--clr-text-muted)}.login-rule{margin-top:55px;border-top:1px solid var(--clr-border);padding-top:18px;font:12px var(--font-mono)}.demo-hint{display:block;overflow-wrap:anywhere}@media(max-width:700px){.login-view{grid-template-columns:1fr;gap:30px}.login-story h1{font-size:42px}.login-rule{display:none}}</style>
+.login-rule {
+  margin-top: 55px;
+  border-top: 1px solid var(--clr-border);
+  padding-top: 18px;
+  font: 12px var(--font-mono);
+}
+@media (max-width: 700px) {
+  .login-view {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .login-story h1 {
+    font-size: 42px;
+  }
+  .login-rule {
+    display: none;
+  }
+}
+</style>
