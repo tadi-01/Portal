@@ -1,8 +1,5 @@
-﻿-- Squashed baseline generated from the deployed migration sequence on 2026-10-12.
--- Apply this baseline only to a fresh database, or reconcile remote migration history first.
-
-
--- ===== Source: 20261012000100_portal_foundation.sql =====
+﻿-- Fieldnotes final-state baseline for a fresh Supabase database.
+-- Creates the final admin/student authorization model directly.
 
 -- Development foundation. No fixture/personal data and no public signup provisioning.
 -- Deliberately fail on existing names: inspect remote schema before applying.
@@ -19,7 +16,12 @@ create table fieldnotes.students (
   student_number text not null unique check (length(trim(student_number)) > 0),
   display_name text not null check (length(trim(display_name)) > 0),
   programme_code text not null,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  programme_name text,
+  academic_year text,
+  part integer check (part > 0),
+  semester integer check (semester > 0),
+  registration_status text
 );
 -- A null auth_user_id is an imported student awaiting account provisioning.
 -- Only the trusted registry provisioning service may create/change that mapping.
@@ -53,9 +55,9 @@ create table fieldnotes.enrollments (
 create table fieldnotes_private.staff_assignments (
   id uuid primary key default gen_random_uuid(),
   auth_user_id uuid not null references auth.users(id),
-  role text not null check (role in ('registry', 'lecturer', 'hod', 'exams_office', 'finance', 'ict')),
+  role text not null check (role = 'admin'),
   offering_id uuid references fieldnotes.course_offerings(id),
-  check (role not in ('lecturer', 'hod', 'exams_office') or offering_id is not null),
+  check (offering_id is null),
   unique nulls not distinct (auth_user_id, role, offering_id)
 );
 create table fieldnotes.assessments (
@@ -82,7 +84,7 @@ create table fieldnotes.marks (
   unique (enrollment_id, assessment_id),
   check ((state = 'draft' and submitted_by is null and submitted_at is null and approved_by is null and approved_at is null)
     or (state = 'submitted' and submitted_by is not null and submitted_at is not null and approved_by is null and approved_at is null)
-    or (state = 'approved' and submitted_by is not null and submitted_at is not null and approved_by is not null and approved_at is not null and approved_by <> submitted_by))
+    or (state = 'approved' and submitted_by is not null and submitted_at is not null and approved_by is not null and approved_at is not null))
 );
 -- Released snapshots only; draft/submitted/approved marks NEVER appear here automatically.
 -- No client INSERT/UPDATE/DELETE grants. Publication RPC remains disabled below.
@@ -140,10 +142,10 @@ language sql stable security definer set search_path = '' as $$
   select id from fieldnotes.students where auth_user_id = (select auth.uid())
 $$;
 create function fieldnotes_private.assigned(offering uuid, roles text[]) returns boolean
-language sql stable security definer set search_path = '' as $$
+language sql stable security definer set search_path = '' as 
   select exists (select 1 from fieldnotes_private.staff_assignments a
-    where a.auth_user_id = (select auth.uid()) and a.offering_id = offering and a.role = any(roles))
-$$;
+    where a.auth_user_id = (select auth.uid()) and a.role = 'admin')
+;
 create function fieldnotes_private.enrolled(offering uuid) returns boolean
 language sql stable security definer set search_path = '' as $$
   select exists (select 1 from fieldnotes.enrollments e
@@ -179,28 +181,28 @@ create policy student_self on fieldnotes.students for select to authenticated
   using (auth_user_id = (select auth.uid()));
 create policy enrollment_self on fieldnotes.enrollments for select to authenticated
   using (student_id = fieldnotes_private.student_id()
-    or fieldnotes_private.assigned(offering_id, array['lecturer','hod','exams_office']));
+    or fieldnotes_private.assigned(offering_id, array['admin']));
 create policy offering_access on fieldnotes.course_offerings for select to authenticated
   using (fieldnotes_private.enrolled(id)
-    or fieldnotes_private.assigned(id, array['lecturer','hod','exams_office']));
+    or fieldnotes_private.assigned(id, array['admin']));
 create policy course_access on fieldnotes.courses for select to authenticated
   using (exists (select 1 from fieldnotes.course_offerings o where o.course_id = fieldnotes.courses.id));
 create policy term_access on fieldnotes.academic_terms for select to authenticated
   using (exists (select 1 from fieldnotes.course_offerings o where o.term_id = fieldnotes.academic_terms.id));
 create policy assessment_staff on fieldnotes.assessments for select to authenticated
-  using (fieldnotes_private.assigned(offering_id, array['lecturer','hod','exams_office']));
+  using (fieldnotes_private.assigned(offering_id, array['admin']));
 create policy marks_staff on fieldnotes.marks for select to authenticated
-  using (fieldnotes_private.assigned(offering_id, array['lecturer','hod','exams_office']));
+  using (fieldnotes_private.assigned(offering_id, array['admin']));
 create policy results_self on fieldnotes.released_results for select to authenticated
   using (fieldnotes_private.owns_enrollment(enrollment_id));
 create policy transactions_self on fieldnotes.account_transactions for select to authenticated
   using (student_id = fieldnotes_private.student_id());
 create policy resources_access on fieldnotes.resources for select to authenticated
   using ((published and fieldnotes_private.enrolled(offering_id))
-    or fieldnotes_private.assigned(offering_id, array['lecturer','hod','exams_office']));
+    or fieldnotes_private.assigned(offering_id, array['admin']));
 create policy exams_access on fieldnotes.exam_sessions for select to authenticated
   using ((published and fieldnotes_private.enrolled(offering_id))
-    or fieldnotes_private.assigned(offering_id, array['lecturer','hod','exams_office']));
+    or fieldnotes_private.assigned(offering_id, array['admin']));
 
 -- Owner explicitly keeps these operations unavailable until registry rules exist.
 -- Not switchable with a client-editable flag or incomplete JSON configuration.
@@ -222,8 +224,6 @@ comment on schema fieldnotes_private is 'Never expose this schema through the Da
 commit;
 
 
--- ===== Source: 20261012000200_mark_workflow.sql =====
-
 begin;
 
 -- Raw marks only; no invented grade scale or weighted-grade calculation.
@@ -240,7 +240,7 @@ begin
   end if;
   select a.offering_id, a.max_score into offering, maximum
     from fieldnotes.assessments a where a.id = target_assessment for share;
-  if offering is null or not fieldnotes_private.assigned(offering, array['lecturer']) then
+  if offering is null or not fieldnotes_private.assigned(offering, array['admin']) then
     raise exception using errcode = '42501', message = 'NOT_AUTHORIZED';
   end if;
   if not exists (select 1 from fieldnotes.enrollments e where e.id = target_enrollment and e.offering_id = offering) then
@@ -267,7 +267,7 @@ language plpgsql security definer set search_path = '' as $$
 declare entry fieldnotes.marks%rowtype;
 begin
   select * into entry from fieldnotes.marks where id = target_mark for update;
-  if entry.id is null or not fieldnotes_private.assigned(entry.offering_id, array['lecturer']) then
+  if entry.id is null or not fieldnotes_private.assigned(entry.offering_id, array['admin']) then
     raise exception using errcode = '42501', message = 'NOT_AUTHORIZED';
   end if;
   if entry.state <> 'draft' then
@@ -284,7 +284,7 @@ language plpgsql security definer set search_path = '' as $$
 declare entry fieldnotes.marks%rowtype;
 begin
   select * into entry from fieldnotes.marks where id = target_mark for update;
-  if entry.id is null or not fieldnotes_private.assigned(entry.offering_id, array['hod','exams_office']) then
+  if entry.id is null or not fieldnotes_private.assigned(entry.offering_id, array['admin']) then
     raise exception using errcode = '42501', message = 'NOT_AUTHORIZED';
   end if;
   if entry.state <> 'submitted' then
@@ -303,16 +303,7 @@ grant execute on function fieldnotes.save_mark(uuid,uuid,numeric),
 commit;
 
 
--- ===== Source: 20261012000300_live_portal_access.sql =====
-
 begin;
-alter table fieldnotes.students
-  add column programme_name text,
-  add column academic_year text,
-  add column part integer check (part > 0),
-  add column semester integer check (semester > 0),
-  add column registration_status text;
-
 create table fieldnotes_private.login_attempts (
   subject_hash text primary key,
   window_started timestamptz not null,
@@ -351,7 +342,7 @@ create function fieldnotes.staff_roster(target_offering uuid)
 returns table (enrollment_id uuid, student_number text, display_name text)
 language plpgsql stable security definer set search_path = '' as $$
 begin
-  if not fieldnotes_private.assigned(target_offering,array['lecturer','hod','exams_office']) then
+  if not fieldnotes_private.assigned(target_offering,array['admin']) then
     raise exception using errcode='42501',message='NOT_AUTHORIZED';
   end if;
   return query select e.id,s.student_number,s.display_name
@@ -362,7 +353,7 @@ create function fieldnotes.save_resource(target_offering uuid, resource_title te
 returns uuid language plpgsql security definer set search_path = '' as $$
 declare result_id uuid;
 begin
-  if not fieldnotes_private.assigned(target_offering,array['lecturer']) then
+  if not fieldnotes_private.assigned(target_offering,array['admin']) then
     raise exception using errcode='42501',message='NOT_AUTHORIZED';
   end if;
   if length(trim(resource_title)) not between 1 and 200 or length(resource_url)>2048
@@ -380,32 +371,7 @@ grant execute on function fieldnotes.my_staff_assignments(),fieldnotes.staff_ros
 commit;
 
 
--- ===== Source: 20261012000400_admin_student_roles.sql =====
-
 begin;
-
--- The portal has two application roles. Admin is global and replaces the
--- former lecturer, HOD, exams-office, registry, finance and ICT roles.
-alter table fieldnotes_private.staff_assignments
-  drop constraint staff_assignments_role_check;
-
-update fieldnotes_private.staff_assignments
-set role = 'admin'
-where role <> 'admin';
-
-update fieldnotes_private.staff_assignments
-set offering_id = null;
-
-alter table fieldnotes_private.staff_assignments
-  add constraint staff_assignments_role_check
-  check (role in ('admin'));
-
-alter table fieldnotes_private.staff_assignments
-  drop constraint staff_assignments_check;
-
-alter table fieldnotes_private.staff_assignments
-  add constraint staff_assignments_check
-  check (offering_id is null);
 
 create or replace function fieldnotes_private.assigned(offering uuid, roles text[])
 returns boolean
@@ -490,8 +456,6 @@ end $$;
 
 commit;
 
-
--- ===== Source: 20261012000500_admin_content_management.sql =====
 
 begin;
 
@@ -637,8 +601,6 @@ to authenticated;
 commit;
 
 
--- ===== Source: 20261012000600_registry_configuration.sql =====
-
 begin;
 
 create table if not exists fieldnotes.registry_configuration (
@@ -718,8 +680,6 @@ grant execute on function fieldnotes.registry_capability(text) to authenticated;
 grant execute on function fieldnotes.submit_registration(), fieldnotes.publish_results() to authenticated;
 commit;
 
-
--- ===== Source: 20261012000700_registration_workflow.sql =====
 
 begin;
 
@@ -809,65 +769,4 @@ grant execute on function fieldnotes.registration_offerings(), fieldnotes.set_re
   fieldnotes.submit_registration(), fieldnotes.admin_registration_requests(),
   fieldnotes.admin_review_registration(uuid, text) to authenticated;
 commit;
-
-
--- ===== Source: 20261012000800_admin_mark_approval.sql =====
-
-begin;
-
--- A single admin now performs lecturer and approver duties. The old constraint
--- required two different staff identities and made an admin-only workflow fail.
-alter table fieldnotes.marks drop constraint if exists marks_check;
-alter table fieldnotes.marks add constraint marks_check check (
-  (state = 'draft' and submitted_by is null and submitted_at is null and approved_by is null and approved_at is null)
-  or (state = 'submitted' and submitted_by is not null and submitted_at is not null and approved_by is null and approved_at is null)
-  or (state = 'approved' and submitted_by is not null and submitted_at is not null
-    and approved_by is not null and approved_at is not null)
-);
-
-create or replace function fieldnotes.approve_mark(target_mark uuid) returns void
-language plpgsql security definer set search_path = '' as $$
-declare entry fieldnotes.marks%rowtype;
-begin
-  select * into entry from fieldnotes.marks where id = target_mark for update;
-  if entry.id is null or not fieldnotes_private.assigned(entry.offering_id, array['hod','exams_office']) then
-    raise exception using errcode = '42501', message = 'NOT_AUTHORIZED';
-  end if;
-  if entry.state <> 'submitted' then
-    raise exception using errcode = 'P0001', message = 'INVALID_MARK_TRANSITION';
-  end if;
-  update fieldnotes.marks set state = 'approved', approved_by = (select auth.uid()), approved_at = now()
-    where id = target_mark;
-  insert into fieldnotes_private.audit_events (actor_id, mark_id, action)
-    values ((select auth.uid()), target_mark, 'approve');
-end $$;
-
-commit;
-
-
--- ===== Source: 20261012000900_unlock_admin_publication.sql =====
-
-begin;
-
-create or replace function fieldnotes.admin_publish_mark(target_mark uuid, result_grade text)
-returns void language plpgsql security definer set search_path = '' as $$
-declare entry fieldnotes.marks%rowtype;
-begin
-  perform fieldnotes_private.require_admin();
-  select * into entry from fieldnotes.marks where id = target_mark for update;
-  if entry.id is null or entry.state <> 'approved' or length(trim(result_grade)) not between 1 and 20 then
-    raise exception using errcode = '22023', message = 'INVALID_PUBLICATION';
-  end if;
-  insert into fieldnotes.released_results (enrollment_id, grade, score, released_at, released_by, registry_rule_version)
-    select entry.enrollment_id, trim(result_grade), entry.score, now(), (select auth.uid()), 'admin-published'
-  on conflict (enrollment_id) do update set
-    grade = excluded.grade,
-    score = excluded.score,
-    released_at = excluded.released_at,
-    released_by = excluded.released_by,
-    registry_rule_version = excluded.registry_rule_version;
-end $$;
-
-commit;
-
 
