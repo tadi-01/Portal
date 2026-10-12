@@ -13,14 +13,15 @@
           {{ store.student.semester }}
         </p>
         <p>
-          Registration submission is unavailable until the registry configures programme
-          eligibility, prerequisites, credit limits and the registration window.
+          Tick the courses you want to take, then submit. An admin reviews your request and
+          enrols you.
         </p>
       </aside>
       <section>
         <div class="registration-actions">
           <h2>Choose your courses</h2>
           <p v-if="error" class="alert alert--danger">{{ error }}</p>
+          <p v-if="message" class="alert alert--info" role="status">{{ message }}</p>
           <label v-for="course in offerings" :key="course.offering_id" class="course-choice">
             <input v-model="course.selected" type="checkbox" :disabled="busy" @change="toggleCourse(course)" />
             <span><strong>{{ course.course_code }} · {{ course.course_name }}</strong><small>{{ course.term_label }} · {{ course.credits }} credits</small></span>
@@ -46,12 +47,27 @@
 <script setup lang="ts">
 import { onMounted, computed, ref } from 'vue'
 import { getSupabaseClient } from '@/lib/supabase'
-import { registrationStatusClass } from '@/lib/registrationStatus'
 import { useStudentPortalStore } from '@/stores/studentPortalStore'
 const store = useStudentPortalStore()
+
+// Picks the colour of the status badge (e.g. green for REGISTERED). Display only.
+function registrationStatusClass(status: string): string {
+  switch (status.trim().toUpperCase()) {
+    case 'REGISTERED':
+      return 'chip--success'
+    case 'PENDING':
+      return 'chip--warning'
+    case 'NOT REGISTERED':
+    case 'UNREGISTERED':
+      return 'chip--danger'
+    default:
+      return 'chip--neutral'
+  }
+}
 const offerings = ref<{ offering_id: string; course_code: string; course_name: string; term_label: string; credits: number; selected: boolean }[]>([])
 const busy = ref(false)
 const error = ref('')
+const message = ref('')
 const selectedCount = computed(() => offerings.value.filter((course) => course.selected).length)
 onMounted(async () => {
   try {
@@ -76,8 +92,13 @@ async function toggleCourse(course: (typeof offerings.value)[number]) {
 }
 async function submit() {
   busy.value = true
+  message.value = ''
   const result = await getSupabaseClient().rpc('submit_registration')
   error.value = result.error ? 'Registration could not be submitted.' : ''
+  if (!result.error) {
+    message.value = 'Registration submitted. An admin will review it.'
+    await store.loadData() // refresh the status badge
+  }
   busy.value = false
 }
 const steps = [
@@ -87,8 +108,8 @@ const steps = [
     to: '/payments',
   },
   {
-    title: 'Check registration availability',
-    text: 'Eligibility rules and registration dates have not been configured.',
+    title: 'Check your fees',
+    text: 'Make sure your fees are up to date before registering.',
     to: '/payments',
   },
   {
@@ -103,7 +124,7 @@ const steps = [
   },
   {
     title: 'Confirm registration',
-    text: 'Submission is locked until registry configuration is supplied.',
+    text: 'Submit your course choices above. An admin approves them.',
     to: '',
   },
 ]

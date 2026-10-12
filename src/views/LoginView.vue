@@ -60,9 +60,32 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { safeReturnPath } from '@/router/returnPath'
+import { useRoute, useRouter, type Router } from 'vue-router'
 import { useStudentPortalStore } from '@/stores/studentPortalStore'
+
+// After login, send the student back to the page they wanted. We only accept
+// real pages inside this app, so a crafted link can never redirect to another site.
+function safeReturnPath(router: Router, value: unknown): string {
+  if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//')) return '/'
+  if (
+    [...value].some(
+      (character) =>
+        character === '\\' || character.charCodeAt(0) <= 32 || character.charCodeAt(0) === 127,
+    )
+  ) {
+    return '/'
+  }
+  const resolved = router.resolve(value)
+  if (
+    !resolved.matched.length ||
+    resolved.path === '/login' ||
+    resolved.meta.staff ||
+    resolved.name === 'not-found'
+  ) {
+    return '/'
+  }
+  return resolved.fullPath
+}
 
 const router = useRouter()
 const route = useRoute()
