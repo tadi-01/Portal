@@ -1,7 +1,16 @@
 <script setup lang="ts">
 import { useStudentPortalStore } from '@/stores/studentPortalStore'
-import { safeResourceUrl } from '@/lib/resourceUrl'
 const store = useStudentPortalStore()
+
+// Only allow safe https links (no logins hidden in the address) before showing them
+function safeResourceUrl(value: string): string | undefined {
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:' && !url.username && !url.password ? url.href : undefined
+  } catch {
+    return undefined
+  }
+}
 </script>
 <template>
   <div>
@@ -20,11 +29,11 @@ const store = useStudentPortalStore()
           :href="safeResourceUrl(resource.url)"
           target="_blank"
           rel="noopener noreferrer"
-          >Open resource (new tab) ?</a
+          >Open resource (new tab) ↗</a
         >
         <p v-else>Resource address unavailable. Contact your lecturer.</p>
       </div>
     </article>
-    <RouterLink to="/courses" class="btn btn--ghost">Browse your courses ?</RouterLink>
+    <RouterLink to="/courses" class="btn btn--ghost">Browse your courses →</RouterLink>
   </div>
 </template>

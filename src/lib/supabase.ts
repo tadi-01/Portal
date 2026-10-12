@@ -34,18 +34,3 @@ export function getSupabaseClient(): PortalClient {
   client = createClient<Database, 'fieldnotes'>(url, key, { db: { schema: 'fieldnotes' } })
   return client
 }
-
-/** Tests the Auth service without signing in or creating/modifying records. */
-export async function checkSupabaseConnection(): Promise<void> {
-  getSupabaseClient() // Validate configuration before making the request.
-  const url = import.meta.env.VITE_SUPABASE_URL!.trim().replace(/\/$/, '')
-  const response = await fetch(`${url}/auth/v1/settings`, {
-    headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY!.trim() },
-    signal: AbortSignal.timeout(10000),
-  })
-  if (!response.ok) {
-    throw new Error(
-      `Supabase connection check failed (HTTP ${response.status}). Check the project URL and publishable key.`,
-    )
-  }
-}
