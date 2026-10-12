@@ -29,21 +29,28 @@ Open http://localhost:5173. To check that everything compiles: `npm run build`.
 
 ## Set up the database (once)
 
-1. Create a project at supabase.com and copy its URL and publishable key into `.env.local`.
-2. Install the tables, rules and functions:
+1. Create a project at supabase.com and copy its URL and publishable key into `.env.local`
+   (find them under **Project Settings -> API**). Restart `npm run dev` afterwards.
+2. **Expose the `fieldnotes` schema.** The portal keeps its tables in a schema called
+   `fieldnotes`, and Supabase hides custom schemas by default. In **Project Settings -> API**,
+   add `fieldnotes` to **Exposed schemas** and save. Skip this and every page fails with an
+   "invalid schema" error.
+3. Install the tables, rules and functions:
    ```powershell
    npx supabase login
    npx supabase link --project-ref <your-project-reference>
    npx supabase db push --linked
    npx supabase functions deploy student-login --use-api
    ```
-3. In the Supabase dashboard go to **Authentication -> Users -> Add user** and create the
-   admin account (an email and a password).
-4. Open `supabase/seed.sql`, change the two values at the top (the programme code and the
+   The project reference is the 20 letters at the start of your project URL.
+4. In the Supabase dashboard go to **Authentication -> Users -> Add user** and create the
+   admin account (an email and a password). Tick **Auto Confirm User**, otherwise the login
+   can fail with an unconfirmed-email error.
+5. Open `supabase/seed.sql`, change the two values at the top (the programme code and the
    admin email), then paste it into the dashboard's **SQL Editor** and press Run. It adds a
    term, three courses, assessments and exam times, switches on registration, and makes your
    user an admin. It is safe to run twice.
-5. Create a student login. Save a small file **outside the project folder**, for example
+6. Create a student login. Save a small file **outside the project folder**, for example
    `student.json`:
    ```json
    {
