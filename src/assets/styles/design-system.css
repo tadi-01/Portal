@@ -174,8 +174,8 @@ small,
   position: fixed;
   z-index: 10;
   inset: 0 auto 0 0;
-  width: 250px;
-  padding: 112px 22px 24px;
+  width: 190px;
+  padding: 96px 16px 24px;
   border-right: 1px solid var(--clr-border);
   background: var(--clr-bg);
   transform: translateX(-100%);
@@ -200,7 +200,7 @@ small,
 }
 .app-shell--sidebar-open .page-content,
 .app-shell--sidebar-open .site-footer {
-  margin-left: calc(250px + 5%);
+  margin-left: calc(190px + 5%);
   transition: margin-left var(--t-fast);
 }
 .page-content,
