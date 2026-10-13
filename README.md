@@ -39,13 +39,19 @@ Open http://localhost:5173. To check that everything compiles: `npm run build`.
 3. Install the tables, rules and functions:
 
 ```powershell
-npx supabase login
-npx supabase link --project-ref <your-project-reference>
-npx supabase db push --linked
-npx supabase functions deploy student-login --use-api
+npx.cmd supabase login
+npx.cmd supabase link --project-ref <your-project-reference>
+npx.cmd supabase db push --linked --dry-run
+npx.cmd supabase db push --linked
+npx.cmd supabase functions deploy student-login --use-api
 ```
 
-The project reference is the 20 letters at the start of your project URL.
+The project reference is the 20 letters at the start of your project URL. The dry run
+should list `20261013013100_baseline.sql` before the real push. This baseline is intended
+for a new, empty Supabase project. If the project already has tables or migration history,
+do not run the push blindly; create a new project or reconcile its migration history first.
+If the CLI reports that the migration is already applied, skip the push and continue with
+the Edge Function deployment.
 
 4. In the Supabase dashboard go to **Authentication -> Users -> Add user** and create the
    admin account (an email and a password). Tick **Auto Confirm User**, otherwise the login
