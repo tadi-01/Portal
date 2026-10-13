@@ -1,7 +1,18 @@
 ﻿<template>
-  <div class="app-shell">
+  <div class="app-shell" :class="{ 'app-shell--sidebar-open': sidebarOpen }">
     <a class="skip-link" href="#main">Skip to content</a>
     <header class="masthead">
+      <button
+        v-if="store.isAuthenticated && !store.isStaff && route.path !== '/login'"
+        class="sidebar-toggle btn btn--ghost btn--sm"
+        type="button"
+        :aria-expanded="sidebarOpen"
+        :aria-label="sidebarOpen ? 'Hide navigation menu' : 'Show navigation menu'"
+        aria-controls="student-sidebar"
+        @click="sidebarOpen = !sidebarOpen"
+      >
+        <span aria-hidden="true">☰</span>
+      </button>
       <RouterLink :to="route.meta.staff ? '/staff' : '/'" class="wordmark"
         ><span class="brand-mark">f.</span> fieldnotes<span class="brand-caption">{{
           route.meta.staff ? 'STAFF WORKSPACE' : 'STUDENT WORKSPACE'
@@ -12,17 +23,6 @@
         ><button class="btn btn--ghost btn--sm" @click="logout">Sign out</button>
       </div>
     </header>
-    <button
-      v-if="store.isAuthenticated && !store.isStaff && route.path !== '/login'"
-      class="sidebar-toggle btn btn--ghost btn--sm"
-      type="button"
-      :aria-expanded="sidebarOpen"
-      :aria-label="sidebarOpen ? 'Hide navigation menu' : 'Show navigation menu'"
-      aria-controls="student-sidebar"
-      @click="sidebarOpen = !sidebarOpen"
-    >
-      <span aria-hidden="true">☰</span>
-    </button>
     <nav
       v-if="store.isAuthenticated && !store.isStaff && route.path !== '/login'"
       id="student-sidebar"
