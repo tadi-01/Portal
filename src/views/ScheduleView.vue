@@ -43,8 +43,12 @@ function examTitle(offeringId: string) {
 }
 
 function formatExamTime(value: string) {
-  return new Date(value).toLocaleString([], {
-    dateStyle: 'medium',
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'Time not published'
+  return date.toLocaleString([], {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
   })
