@@ -53,6 +53,17 @@ do not run the push blindly; create a new project or reconcile its migration his
 If the CLI reports that the migration is already applied, skip the push and continue with
 the Edge Function deployment.
 
+If `db push` stops with `syntax error at or near "select"` in
+`fieldnotes_private.assigned`, update the repository to the latest `main` branch. The
+baseline must contain `as $$` before that function's `select` body and `$$;` after it.
+Then rerun the dry run and the real push:
+
+```powershell
+git pull origin main
+npx.cmd supabase db push --linked --dry-run
+npx.cmd supabase db push --linked
+```
+
 4. In the Supabase dashboard go to **Authentication -> Users -> Add user** and create the
    admin account (an email and a password). Tick **Auto Confirm User**, otherwise the login
    can fail with an unconfirmed-email error.

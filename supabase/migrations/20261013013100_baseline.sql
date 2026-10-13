@@ -142,10 +142,10 @@ language sql stable security definer set search_path = '' as $$
   select id from fieldnotes.students where auth_user_id = (select auth.uid())
 $$;
 create function fieldnotes_private.assigned(offering uuid, roles text[]) returns boolean
-language sql stable security definer set search_path = '' as 
+language sql stable security definer set search_path = '' as $$
   select exists (select 1 from fieldnotes_private.staff_assignments a
     where a.auth_user_id = (select auth.uid()) and a.role = 'admin')
-;
+$$;
 create function fieldnotes_private.enrolled(offering uuid) returns boolean
 language sql stable security definer set search_path = '' as $$
   select exists (select 1 from fieldnotes.enrollments e
@@ -769,4 +769,3 @@ grant execute on function fieldnotes.registration_offerings(), fieldnotes.set_re
   fieldnotes.submit_registration(), fieldnotes.admin_registration_requests(),
   fieldnotes.admin_review_registration(uuid, text) to authenticated;
 commit;
-
