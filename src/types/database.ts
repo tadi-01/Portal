@@ -365,6 +365,7 @@ export type Database = {
       students: {
         Row: {
           academic_year: string | null
+          account_balance: number
           auth_user_id: string | null
           created_at: string
           display_name: string
@@ -378,6 +379,7 @@ export type Database = {
         }
         Insert: {
           academic_year?: string | null
+          account_balance?: number
           auth_user_id?: string | null
           created_at?: string
           display_name: string
@@ -391,6 +393,7 @@ export type Database = {
         }
         Update: {
           academic_year?: string | null
+          account_balance?: number
           auth_user_id?: string | null
           created_at?: string
           display_name?: string

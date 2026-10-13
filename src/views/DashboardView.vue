@@ -24,7 +24,7 @@
         <span>Enrolled courses</span
         ><strong>{{ String(store.courses.length).padStart(2, '0') }}</strong>
       </div>
-      <div><span>Account balance · USD</span><strong>Not provided</strong></div>
+      <div><span>Account balance · USD</span><strong>{{ store.student.feesBalance?.toFixed(2) ?? 'Not provided' }}</strong></div>
     </div>
     <div class="overview-grid">
       <section>

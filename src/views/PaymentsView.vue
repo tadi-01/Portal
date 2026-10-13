@@ -5,36 +5,29 @@
     <div class="split-page account-layout">
       <aside class="side-note">
         <small>OVERALL BALANCE · USD</small>
-        <h2 class="account-balance">Not provided</h2>
+        <h2 class="account-balance">{{ store.student.feesBalance?.toFixed(2) ?? 'Not provided' }}</h2>
         <p>{{ store.student.name }}<br />{{ store.student.studentNumber }}</p>
         <p>
-          Negative entries represent payments or credit. Currency ledgers are shown separately.
+          The balance is configured on your student record. USD transaction history is shown below.
         </p>
         <button class="statement-action btn btn--ghost print-button" @click="printStatement">
           Print statement ↗
         </button>
       </aside>
       <div>
-        <section
-          v-for="ledger in ledgers"
-          :key="ledger.currency"
-          class="currency-ledger section-card"
-        >
+        <section class="currency-ledger section-card">
           <header class="section-header-bar">
-            {{ ledger.currency }} / TRANSACTION HISTORY
+            USD / TRANSACTION HISTORY
           </header>
           <div
             class="table-scroll"
             tabindex="0"
             role="region"
-            :aria-labelledby="`ledger-${ledger.currency}`"
+            aria-labelledby="ledger-usd"
           >
             <table class="data-table">
-              <caption :id="`ledger-${ledger.currency}`">
-                {{
-                  ledger.currency
-                }}
-                account transactions
+              <caption id="ledger-usd">
+                USD account transactions
               </caption>
               <thead>
                 <tr>
@@ -46,14 +39,14 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="pay in ledger.entries" :key="pay.id">
+                <tr v-for="pay in store.usdPayments" :key="pay.id">
                   <td>{{ pay.date }}</td>
                   <td>{{ pay.description }}</td>
                   <td>{{ pay.type }}</td>
                   <td>{{ pay.amount.toFixed(2) }}</td>
                   <td>{{ pay.balance.toFixed(2) }}</td>
                 </tr>
-                <tr v-if="!ledger.entries.length">
+                <tr v-if="!store.usdPayments.length">
                   <td colspan="5">No transactions recorded.</td>
                 </tr>
               </tbody>
@@ -65,13 +58,8 @@
   </div>
 </template>
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useStudentPortalStore } from '@/stores/studentPortalStore'
 const store = useStudentPortalStore()
-const ledgers = computed(() => [
-  { currency: 'ZiG', entries: store.zigPayments },
-  { currency: 'USD', entries: store.usdPayments },
-])
 function printStatement() {
   window.print()
 }

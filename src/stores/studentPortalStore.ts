@@ -44,7 +44,6 @@ export const useStudentPortalStore = defineStore('studentPortal', () => {
   const student = ref(emptyStudent())
   const assignments = ref<{ role: string; offering_id: string | null }[]>([])
   const courses = ref<Course[]>([])
-  const zigPayments = ref<Payment[]>([])
   const usdPayments = ref<Payment[]>([])
   const examResults = ref<Result[]>([])
   const resources = ref<Row<'resources'>[]>([])
@@ -60,7 +59,6 @@ export const useStudentPortalStore = defineStore('studentPortal', () => {
   function clearData() {
     student.value = emptyStudent()
     courses.value = []
-    zigPayments.value = []
     usdPayments.value = []
     examResults.value = []
     resources.value = []
@@ -104,7 +102,8 @@ export const useStudentPortalStore = defineStore('studentPortal', () => {
         academicYear: s.academic_year ?? 'Not provided',
         part: s.part,
         semester: s.semester,
-        registrationStatus: s.registration_status ?? 'Not provided',
+        registrationStatus: s.registration_status ?? 'Not registered',
+        feesBalance: s.account_balance,
       }
       const courseFor = (offeringId: string) => {
         const offering = data.offerings.find((o) => o.id === offeringId)
@@ -140,7 +139,6 @@ export const useStudentPortalStore = defineStore('studentPortal', () => {
           amount: t.amount,
           balance: t.balance,
         }))
-      zigPayments.value = transactions.filter((t) => t.currency === 'ZIG')
       usdPayments.value = transactions.filter((t) => t.currency === 'USD')
       // Same-day transactions have no authoritative sequence; don't infer a total balance.
       resources.value = data.resources.filter((r) => r.published)
@@ -248,7 +246,6 @@ export const useStudentPortalStore = defineStore('studentPortal', () => {
   return {
     student,
     courses,
-    zigPayments,
     usdPayments,
     examResults,
     resources,

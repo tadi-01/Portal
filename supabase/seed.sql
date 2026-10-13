@@ -38,9 +38,9 @@ begin
   -- 2-3. Three courses, each with a class, two assessments and an exam time
   for c in
     select * from (values
-      ('CS101', 'Introduction to Programming'),
-      ('CS102', 'Database Systems'),
-      ('CS103', 'Web Development')
+      ('SCS101', 'Introduction to Programming'),
+      ('SCS102', 'Database Systems'),
+      ('SCS103', 'Web Development')
     ) as t(code, name)
   loop
     insert into fieldnotes.courses (code, name) values (c.code, c.name)
@@ -48,7 +48,7 @@ begin
     select id into v_course from fieldnotes.courses where code = c.code;
 
     insert into fieldnotes.course_offerings (course_id, term_id, programme_code, credits)
-    values (v_course, v_term, v_programme, 3)
+    values (v_course, v_term, v_programme, 10)
     on conflict (course_id, term_id, programme_code) do nothing;
     select id into v_offering from fieldnotes.course_offerings o
       where o.course_id = v_course and o.term_id = v_term and o.programme_code = v_programme;
