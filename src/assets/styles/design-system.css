@@ -164,7 +164,12 @@ small,
   position: fixed;
   z-index: 11;
   top: 84px;
-  right: 5%;
+  left: 5%;
+  align-items: center;
+}
+.sidebar-toggle > span:first-child {
+  font-size: 20px;
+  line-height: 1;
 }
 .student-sidebar {
   position: fixed;
