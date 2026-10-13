@@ -12,9 +12,21 @@
         ><button class="btn btn--ghost btn--sm" @click="logout">Sign out</button>
       </div>
     </header>
+    <button
+      v-if="store.isAuthenticated && !store.isStaff && route.path !== '/login'"
+      class="sidebar-toggle btn btn--ghost btn--sm"
+      type="button"
+      :aria-expanded="sidebarOpen"
+      aria-controls="student-sidebar"
+      @click="sidebarOpen = !sidebarOpen"
+    >
+      {{ sidebarOpen ? 'Hide menu' : 'Show menu' }}
+    </button>
     <nav
       v-if="store.isAuthenticated && !store.isStaff && route.path !== '/login'"
-      class="main-nav"
+      id="student-sidebar"
+      class="student-sidebar"
+      :class="{ 'student-sidebar--open': sidebarOpen }"
       aria-label="Main navigation"
     >
       <RouterLink
@@ -22,6 +34,7 @@
         :key="link.to"
         :to="link.to"
         :class="{ active: route.path === link.to }"
+        @click="sidebarOpen = false"
         ><span>{{ String(index + 1).padStart(2, '0') }}</span
         >{{ link.label }}</RouterLink
       >
@@ -47,12 +60,13 @@
   </div>
 </template>
 <script setup lang="ts">
-import { nextTick, watch } from 'vue'
+import { nextTick, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useStudentPortalStore } from '@/stores/studentPortalStore'
 const route = useRoute()
 const router = useRouter()
 const store = useStudentPortalStore()
+const sidebarOpen = ref(false)
 watch(
   () => store.isAuthenticated,
   (signedIn, wasSignedIn) => {

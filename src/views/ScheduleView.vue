@@ -23,8 +23,7 @@
           <div>
             <h2>{{ examTitle(exam.offering_id) }}</h2>
             <p>
-              {{ new Date(exam.starts_at).toLocaleString() }} –
-              {{ new Date(exam.ends_at).toLocaleString() }}
+              {{ formatExamTime(exam.starts_at) }} – {{ formatExamTime(exam.ends_at) }}
             </p>
             <p>{{ exam.venue ?? 'Venue not published' }}</p>
           </div>
@@ -41,6 +40,14 @@ const store = useStudentPortalStore()
 function examTitle(offeringId: string) {
   const course = store.courses.find((entry) => entry.id === offeringId)
   return course?.name ?? course?.code ?? 'Examination'
+}
+
+function formatExamTime(value: string) {
+  return new Date(value).toLocaleString([], {
+    dateStyle: 'medium',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
 }
 
 </script>
