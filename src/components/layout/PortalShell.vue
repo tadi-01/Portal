@@ -17,10 +17,11 @@
       class="sidebar-toggle btn btn--ghost btn--sm"
       type="button"
       :aria-expanded="sidebarOpen"
+      :aria-label="sidebarOpen ? 'Hide navigation menu' : 'Show navigation menu'"
       aria-controls="student-sidebar"
       @click="sidebarOpen = !sidebarOpen"
     >
-      {{ sidebarOpen ? 'Hide menu' : 'Show menu' }}
+      <span aria-hidden="true">☰</span>
     </button>
     <nav
       v-if="store.isAuthenticated && !store.isStaff && route.path !== '/login'"
