@@ -66,11 +66,14 @@ The project reference is the 20 letters at the start of your project URL.
   "programmeName": "General Studies",
   "academicYear": "2026",
   "part": 1,
-  "semester": 1
+  "semester": 1,
+  "accountBalance": 0
 }
 ```
 
-`programmeCode` must be the same programme code used by the course offerings. Then run:
+`programmeCode` must be the same programme code used by the course offerings. `accountBalance`
+is the current USD balance shown on the student account page. Transaction history is loaded
+separately from the USD ledger. Then run:
 
 ```powershell
 node scripts/provision-student.mjs --development --input C:\path\to\student.json

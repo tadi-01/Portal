@@ -19,6 +19,7 @@ create table fieldnotes.students (
   created_at timestamptz not null default now(),
   programme_name text,
   academic_year text,
+  account_balance numeric(18,2) not null default 0,
   part integer check (part > 0),
   semester integer check (semester > 0),
   registration_status text

@@ -31,8 +31,9 @@ assert.ok(
     Number.isInteger(record.part) &&
     record.part > 0 &&
     Number.isInteger(record.semester) &&
-    record.semester > 0,
-  'Name, programme code, programme name, part and semester are required',
+    record.semester > 0 &&
+    Number.isFinite(record.accountBalance),
+  'Name, programme code, programme name, part, semester and account balance are required',
 )
 let createdId
 let linked = false
@@ -59,6 +60,7 @@ try {
         academic_year: record.academicYear ?? null,
         part: record.part,
         semester: record.semester,
+        account_balance: record.accountBalance,
       })
       .eq('student_number', record.studentNumber.trim())
     if (updated.error) throw new Error('Student details update failed')
@@ -84,6 +86,7 @@ try {
       academic_year: record.academicYear ?? null,
       part: record.part,
       semester: record.semester,
+      account_balance: record.accountBalance,
       // No registration status, marks, fees or eligibility is inferred from the old demo.
     })
     if (inserted.error) throw new Error('Student linking failed')

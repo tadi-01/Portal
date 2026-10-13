@@ -4,8 +4,9 @@
   "studentNumber": "N02530064B",
   "name": "Tadiwa Dzarira",
   "programmeCode": "SCS",
-  "programmeName": "Computer Science",
+  "programmeName": "Bachelor of Science in Computer Science",
   "academicYear": "2026",
   "part": 1,
-  "semester": 1
+  "semester": 1,
+  "accountBalance": 0
 }
