@@ -39,7 +39,6 @@ Open http://localhost:5173. To check that everything compiles: `npm run build`.
 ```powershell
 npx.cmd supabase login
 npx.cmd supabase link --project-ref <your-project-reference>
-npx.cmd supabase db push --linked --dry-run
 npx.cmd supabase db push --linked
 npx.cmd supabase functions deploy student-login --use-api
 ```
@@ -71,9 +70,9 @@ The project reference is the 20 letters at the start of your project URL.
 }
 ```
 
-`programmeCode` must be the same programme code used by the course offerings. `accountBalance`
-is the current USD balance shown on the student account page. Transaction history is loaded
-separately from the USD ledger. Then run:
+`programmeCode` must be the same programme code used by the course offerings.
+
+7. Then run:
 
 ```powershell
 node scripts/provision-student.mjs --development --input C:\path\to\student.json
