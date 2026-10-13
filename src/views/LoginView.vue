@@ -30,14 +30,19 @@
 
           <div class="form-field">
             <label for="password">Password</label>
-            <input
+            <div class="password-field">
+              <input
               id="password"
               v-model="password"
-              type="password"
+              :type="showPassword ? 'text' : 'password'"
               placeholder="Enter your password"
               autocomplete="current-password"
               required
-            />
+              />
+              <button class="password-toggle" type="button" @click="showPassword = !showPassword">
+                {{ showPassword ? 'Hide' : 'Show' }}
+              </button>
+            </div>
           </div>
 
           <div v-if="errorMessage || store.errorMessage" class="alert alert--danger" role="alert">
@@ -94,6 +99,7 @@ const studentNumber = ref('')
 const password = ref('')
 const errorMessage = ref('')
 const busy = ref(false)
+const showPassword = ref(false)
 
 async function handleLogin() {
   if (busy.value) return

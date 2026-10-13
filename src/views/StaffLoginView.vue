@@ -8,6 +8,7 @@ const email = ref('')
 const password = ref('')
 const busy = ref(false)
 const error = ref('')
+const showPassword = ref(false)
 async function signIn() {
   if (busy.value) return
   busy.value = true
@@ -43,13 +44,18 @@ async function signIn() {
           required
         />
         <label for="staff-password">Password</label>
-        <input
-          id="staff-password"
-          v-model="password"
-          type="password"
-          autocomplete="current-password"
-          required
-        />
+        <div class="password-field">
+          <input
+            id="staff-password"
+            v-model="password"
+            :type="showPassword ? 'text' : 'password'"
+            autocomplete="current-password"
+            required
+          />
+          <button class="password-toggle" type="button" @click="showPassword = !showPassword">
+            {{ showPassword ? 'Hide' : 'Show' }}
+          </button>
+        </div>
         <p v-if="error" role="alert" class="alert alert--danger">{{ error }}</p>
         <button class="btn btn--primary" :disabled="busy">
           {{ busy ? 'Signing in…' : 'Sign in' }}

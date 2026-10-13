@@ -18,7 +18,7 @@
 do $$
 declare
   v_programme   text := 'SCS';            -- <-- change me
-  v_admin_email text := 'admin@fieldnotes.com';  -- <-- change me
+  v_admin_email text := 'admin@example.com';  -- <-- change me
   v_term        uuid;
   v_course      uuid;
   v_offering    uuid;
@@ -65,7 +65,12 @@ begin
       where a.offering_id = v_offering and a.label = 'Final exam');
 
     insert into fieldnotes.exam_sessions (offering_id, starts_at, ends_at, venue, published)
-    select v_offering, now() + interval '30 days', now() + interval '30 days 3 hours', 'Main Hall', true
+    select
+      v_offering,
+      date_trunc('day', now() + interval '30 days') + interval '9 hours',
+      date_trunc('day', now() + interval '30 days') + interval '12 hours',
+      'Main Hall',
+      true
     where not exists (
       select 1 from fieldnotes.exam_sessions e where e.offering_id = v_offering);
   end loop;
