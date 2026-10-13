@@ -105,6 +105,8 @@ small,
   margin: auto;
 }
 .masthead {
+  position: relative;
+  z-index: 12;
   display: flex;
   justify-content: space-between;
   align-items: center;
