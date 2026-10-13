@@ -410,6 +410,10 @@ const deleteResource = (resource: Row<'resources'>) =>
   padding-inline: 0;
   border-block: 1px solid var(--clr-border);
   background: transparent;
+  display: flex;
+  gap: 22px;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 .staff-tab {
   white-space: nowrap;

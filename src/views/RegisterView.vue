@@ -1,6 +1,6 @@
 ﻿<template>
   <div>
-    <div class="eyebrow">ADMINISTRATION / SEMESTER CHECKLIST</div>
+    <div class="eyebrow">ADMINISTRATION / COURSE REGISTRATION</div>
     <h1 class="page-masthead">Ready for the semester.</h1>
     <div class="split-page">
       <aside class="side-note">
@@ -38,16 +38,6 @@
             Registration submitted. An admin will review your course choices.
           </p>
         </div>
-        <article v-for="(step, index) in steps" :key="step.title" class="course-row">
-          <span class="row-number">0{{ index + 1 }}</span>
-          <div>
-            <h3>{{ step.title }}</h3>
-            <p class="registration-description">{{ step.text }}</p>
-            <RouterLink v-if="step.to" :to="step.to" class="registration-review"
-              >Review details ↗</RouterLink
-            >
-          </div>
-        </article>
       </section>
     </div>
   </div>
@@ -110,47 +100,11 @@ async function submit() {
   }
   busy.value = false
 }
-const steps = [
-  {
-    title: 'Review your account',
-    text: 'Review the transactions recorded on your account.',
-    to: '/payments',
-  },
-  {
-    title: 'Check your fees',
-    text: 'Make sure your fees are up to date before registering.',
-    to: '/payments',
-  },
-  {
-    title: 'Verify your student record',
-    text: 'Check your personal and academic information.',
-    to: '/',
-  },
-  {
-    title: 'Review your course list',
-    text: 'Make sure the listed courses match your programme.',
-    to: '/courses',
-  },
-  {
-    title: 'Confirm registration',
-    text: 'Submit your course choices above. An admin approves them.',
-    to: '',
-  },
-]
 </script>
 
 <style scoped>
 .registration-heading {
   margin-top: 22px;
-}
-.registration-description {
-  font-size: 13px;
-  color: var(--clr-text-muted);
-  margin-top: 6px;
-}
-.registration-review {
-  font-size: 12px;
-  color: var(--clr-primary);
 }
 .registration-actions {
   display: grid;

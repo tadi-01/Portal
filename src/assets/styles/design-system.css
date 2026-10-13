@@ -42,6 +42,7 @@ body {
   background: var(--clr-bg);
   color: var(--clr-text);
   font: 15px/1.6 var(--font-body);
+  overflow-x: hidden;
 }
 h1,
 h2,
@@ -109,6 +110,7 @@ small,
   align-items: center;
   padding: 26px 5%;
   gap: 20px;
+  min-width: 0;
 }
 .wordmark {
   display: flex;
@@ -118,6 +120,10 @@ small,
     bold 30px Georgia,
     serif;
   letter-spacing: -1px;
+  min-width: 0;
+}
+.wordmark::first-letter {
+  flex: none;
 }
 .brand-mark {
   display: grid;
@@ -150,6 +156,8 @@ small,
   border-block: 1px solid var(--clr-border);
   gap: 27px;
   overflow-x: auto;
+  scrollbar-width: thin;
+  overscroll-behavior-inline: contain;
 }
 .main-nav a {
   white-space: nowrap;
@@ -169,6 +177,7 @@ small,
 .page-content {
   padding: 48px 5% 64px;
   min-height: 72vh;
+  min-width: 0;
 }
 .site-footer {
   margin: 0 5%;
@@ -196,6 +205,7 @@ small,
   justify-content: space-between;
   align-items: center;
   gap: 24px;
+  min-width: 0;
 }
 .overview-heading h1 em {
   color: var(--clr-primary);
@@ -261,6 +271,7 @@ small,
   display: grid;
   grid-template-columns: minmax(0, 1.8fr) minmax(260px, 1fr);
   gap: 55px;
+  min-width: 0;
 }
 .section-heading {
   display: flex;
@@ -358,6 +369,7 @@ small,
   border: 1px solid var(--clr-border);
   background: var(--clr-surface);
   overflow: hidden;
+  min-width: 0;
 }
 .section-header-bar {
   padding: 18px 24px;
@@ -397,6 +409,8 @@ small,
 }
 .table-scroll {
   overflow-x: auto;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 .table-scroll table {
   min-width: 620px;
@@ -482,6 +496,12 @@ select {
   display: grid;
   grid-template-columns: 1fr 2fr;
   gap: 40px;
+  min-width: 0;
+}
+.split-page > *,
+.overview-grid > *,
+.col-2 > * {
+  min-width: 0;
 }
 .side-note {
   border-top: 3px solid var(--clr-primary);
@@ -548,6 +568,8 @@ select {
   }
   .main-nav {
     gap: 22px;
+    margin-inline: -5%;
+    padding-inline: 5%;
   }
   .main-nav a {
     padding-block: 14px;
@@ -563,6 +585,14 @@ select {
     gap: 22px;
     margin: 28px 0;
   }
+  .stat-strip > div {
+    padding-inline: 12px;
+    min-width: 0;
+  }
+  .stat-strip strong {
+    font-size: clamp(20px, 7vw, 30px);
+    overflow-wrap: anywhere;
+  }
   .stat-strip > div:nth-child(3) {
     padding-left: 0;
   }
@@ -576,6 +606,9 @@ select {
   }
   .section-heading h2 {
     font-size: 25px;
+  }
+  .section-heading {
+    align-items: flex-start;
   }
   .page-masthead {
     font-size: 38px;
@@ -598,8 +631,76 @@ select {
   .record-grid {
     grid-template-columns: 1fr 1fr;
   }
+  .course-row {
+    gap: 12px;
+  }
   .semester-note {
     padding: 25px;
+  }
+  @media (max-width: 480px) {
+    body {
+      font-size: 14px;
+    }
+    .masthead {
+      gap: 12px;
+      padding-block: 16px;
+    }
+    .wordmark {
+      font-size: 20px;
+      gap: 8px;
+    }
+    .brand-mark {
+      height: 30px;
+      width: 30px;
+      font-size: 24px;
+    }
+    .account .btn {
+      padding: 7px 9px;
+    }
+    .page-content {
+      padding: 24px 5% 42px;
+    }
+    .page-masthead {
+      font-size: clamp(30px, 10vw, 38px);
+      letter-spacing: -1px;
+      padding-bottom: 18px;
+      margin-bottom: 22px;
+    }
+    .eyebrow {
+      margin-bottom: 12px;
+    }
+    .stat-strip {
+      grid-template-columns: 1fr;
+      gap: 0;
+    }
+    .stat-strip > div,
+    .stat-strip > div:nth-child(2),
+    .stat-strip > div:nth-child(3) {
+      border-right: 0;
+      border-bottom: 1px solid var(--clr-border);
+      padding: 12px 0;
+    }
+    .stat-strip > div:last-child {
+      border-bottom: 0;
+    }
+    .record-grid {
+      grid-template-columns: 1fr;
+    }
+    .section-header-bar {
+      padding: 14px 16px;
+      line-height: 1.4;
+    }
+    .section-body {
+      padding: 14px;
+    }
+    .btn {
+      max-width: 100%;
+      white-space: normal;
+    }
+    .site-footer {
+      margin-inline: 5%;
+      overflow-wrap: anywhere;
+    }
   }
   .empty-panel {
     padding: 35px 22px;
