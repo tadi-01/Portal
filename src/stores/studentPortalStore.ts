@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed, onScopeDispose } from 'vue'
+import { ref, onScopeDispose } from 'vue'
 import { getSupabaseClient } from '@/lib/supabase'
 import { readIdentity, readStudentData, studentSignIn, type Row } from '@/services/portal'
 
@@ -34,7 +34,7 @@ const emptyStudent = () => ({
   academicYear: 'Not provided',
   part: null as number | null,
   semester: null as number | null,
-  registrationStatus: 'Not provided',
+  registrationStatus: 'Not registered',
   feesBalance: null as number | null,
 })
 
@@ -49,7 +49,6 @@ export const useStudentPortalStore = defineStore('studentPortal', () => {
   const examResults = ref<Result[]>([])
   const resources = ref<Row<'resources'>[]>([])
   const exams = ref<Row<'exam_sessions'>[]>([])
-  const gpa = computed(() => 'Not configured')
   const loading = ref(false)
   const errorMessage = ref('')
   let initialized: Promise<void> | undefined
@@ -254,7 +253,6 @@ export const useStudentPortalStore = defineStore('studentPortal', () => {
     examResults,
     resources,
     exams,
-    gpa,
     isAuthenticated,
     isStaff,
     assignments,

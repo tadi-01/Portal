@@ -26,9 +26,17 @@
             <input v-model="course.selected" type="checkbox" :disabled="busy" @change="toggleCourse(course)" />
             <span><strong>{{ course.course_code }} · {{ course.course_name }}</strong><small>{{ course.term_label }} · {{ course.credits }} credits</small></span>
           </label>
-          <button class="btn btn--primary" :disabled="busy || !selectedCount" @click="submit">
+          <button
+            v-if="canSubmit"
+            class="btn btn--primary"
+            :disabled="busy || !selectedCount"
+            @click="submit"
+          >
             Submit registration ({{ selectedCount }} selected)
           </button>
+          <p v-else class="alert alert--info">
+            Registration submitted. An admin will review your course choices.
+          </p>
         </div>
         <article v-for="(step, index) in steps" :key="step.title" class="course-row">
           <span class="row-number">0{{ index + 1 }}</span>
@@ -69,6 +77,7 @@ const busy = ref(false)
 const error = ref('')
 const message = ref('')
 const selectedCount = computed(() => offerings.value.filter((course) => course.selected).length)
+const canSubmit = computed(() => !['SUBMITTED', 'REGISTERED'].includes(store.student.registrationStatus.toUpperCase()))
 onMounted(async () => {
   try {
     const result = await getSupabaseClient().rpc('registration_offerings')

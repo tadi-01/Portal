@@ -24,7 +24,7 @@
             <h2>{{ examTitle(exam.offering_id) }}</h2>
             <p>
               {{ new Date(exam.starts_at).toLocaleString() }} –
-              {{ new Date(exam.ends_at).toLocaleString() }} (your local time)
+              {{ new Date(exam.ends_at).toLocaleString() }}
             </p>
             <p>{{ exam.venue ?? 'Venue not published' }}</p>
           </div>

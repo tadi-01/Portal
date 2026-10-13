@@ -17,15 +17,12 @@
       <div>
         <span>Registration</span
         ><strong class="status-text">{{
-          store.student.registrationStatus.toLowerCase()
+          store.student.registrationStatus
         }}</strong>
       </div>
       <div>
         <span>Enrolled courses</span
         ><strong>{{ String(store.courses.length).padStart(2, '0') }}</strong>
-      </div>
-      <div>
-        <span>Overall GPA</span><strong>{{ store.gpa }}</strong>
       </div>
       <div><span>Account balance · USD</span><strong>Not provided</strong></div>
     </div>

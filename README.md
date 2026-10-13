@@ -30,12 +30,10 @@ Open http://localhost:5173. To check that everything compiles: `npm run build`.
 
 1. Create a project at supabase.com and copy its URL and publishable key into `.env.local`
    (find them under **Project Settings -> API**). Restart `npm run dev` afterwards.
-
 2. **Expose the `fieldnotes` schema.** The portal keeps its tables in a schema called
    `fieldnotes`, and Supabase hides custom schemas by default. In **Project Settings -> API**,
    add `fieldnotes` to **Exposed schemas** and save. Skip this and every page fails with an
    "invalid schema" error.
-
 3. Install the tables, rules and functions:
 
 ```powershell
@@ -46,35 +44,17 @@ npx.cmd supabase db push --linked
 npx.cmd supabase functions deploy student-login --use-api
 ```
 
-The project reference is the 20 letters at the start of your project URL. The dry run
-should list `20261013013100_baseline.sql` before the real push. This baseline is intended
-for a new, empty Supabase project. If the project already has tables or migration history,
-do not run the push blindly; create a new project or reconcile its migration history first.
-If the CLI reports that the migration is already applied, skip the push and continue with
-the Edge Function deployment.
-
-If `db push` stops with `syntax error at or near "select"` in
-`fieldnotes_private.assigned`, update the repository to the latest `main` branch. The
-baseline must contain `as $$` before that function's `select` body and `$$;` after it.
-Then rerun the dry run and the real push:
-
-```powershell
-git pull origin main
-npx.cmd supabase db push --linked --dry-run
-npx.cmd supabase db push --linked
-```
+The project reference is the 20 letters at the start of your project URL.
 
 4. In the Supabase dashboard go to **Authentication -> Users -> Add user** and create the
    admin account (an email and a password). Tick **Auto Confirm User**, otherwise the login
    can fail with an unconfirmed-email error.
-
 5. Open `supabase/seed.sql`, change the two values at the top (the programme code and the
    admin email), then paste it into the dashboard's **SQL Editor** and press Run. It adds a
    term, three courses, assessments and exam times, switches on registration, and makes your
    user an admin. It is safe to run twice.
-
 6. Create a student login. Save a small file **outside the project folder**, for example
-`student.json`:
+   `student.json`:
 
 ```json
 {
@@ -82,11 +62,15 @@ npx.cmd supabase db push --linked
   "password": "ChooseAPassword1",
   "studentNumber": "N0001",
   "name": "Tadiwa Example",
-  "programme": "GENERAL"
+  "programmeCode": "GENERAL",
+  "programmeName": "General Studies",
+  "academicYear": "2026",
+  "part": 1,
+  "semester": 1
 }
 ```
 
-`programme` must be the same programme code you used in the seed. Then run:
+`programmeCode` must be the same programme code used by the course offerings. Then run:
 
 ```powershell
 node scripts/provision-student.mjs --development --input C:\path\to\student.json
