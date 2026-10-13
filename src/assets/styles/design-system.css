@@ -112,6 +112,9 @@ small,
   gap: 20px;
   min-width: 0;
 }
+.masthead .sidebar-toggle {
+  flex: none;
+}
 .wordmark {
   display: flex;
   align-items: center;
@@ -161,10 +164,6 @@ small,
 }
 .sidebar-toggle {
   display: inline-flex;
-  position: fixed;
-  z-index: 11;
-  top: 84px;
-  left: 5%;
   align-items: center;
 }
 .sidebar-toggle > span:first-child {
@@ -198,6 +197,15 @@ small,
 }
 .student-sidebar a.active {
   color: var(--clr-primary);
+}
+.app-shell--sidebar-open .page-content,
+.app-shell--sidebar-open .site-footer {
+  margin-left: calc(250px + 5%);
+  transition: margin-left var(--t-fast);
+}
+.page-content,
+.site-footer {
+  transition: margin-left var(--t-fast);
 }
 .password-field {
   position: relative;
