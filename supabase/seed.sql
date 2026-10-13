@@ -17,8 +17,8 @@
 
 do $$
 declare
-  v_programme   text := 'GENERAL';            -- <-- change me
-  v_admin_email text := 'admin@example.com';  -- <-- change me
+  v_programme   text := 'SCS';            -- <-- change me
+  v_admin_email text := 'admin@fieldnotes.com';  -- <-- change me
   v_term        uuid;
   v_course      uuid;
   v_offering    uuid;
