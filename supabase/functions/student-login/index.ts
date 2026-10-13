@@ -14,6 +14,7 @@ const response = (status: number, body: object) =>
 Deno.serve(async (request: Request) => {
   if (request.method === "OPTIONS") return new Response(null, { headers });
   if (request.method !== "POST") return response(405, { error: "Method not allowed." });
+  let stage = "request";
   try {
     const text = await request.text();
     if (text.length > 4096) return response(400, { error: "Invalid request." });
@@ -40,21 +41,33 @@ Deno.serve(async (request: Request) => {
         error: "The student number or password is incorrect, or sign-in is temporarily limited.",
       });
     if (!userId) return invalid();
+    stage = "identity";
     const { data } = await admin.auth.admin.getUserById(userId);
     if (!data.user?.email) return invalid();
-    const auth = createClient(url, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      auth: { persistSession: false, autoRefreshToken: false },
+    const publicKey =
+      request.headers.get("apikey") ??
+      Deno.env.get("FIELDNOTES_PUBLIC_KEY") ??
+      Deno.env.get("SUPABASE_PUBLISHABLE_KEY") ??
+      Deno.env.get("SUPABASE_ANON_KEY");
+    if (!publicKey) return response(503, { error: "Sign-in is unavailable. Try again." });
+    stage = "password";
+    const signedIn = await fetch(`${url}/auth/v1/token?grant_type=password`, {
+      method: "POST",
+      headers: {
+        apikey: publicKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email: data.user.email, password: body.password }),
     });
-    const signedIn = await auth.auth.signInWithPassword({
-      email: data.user.email,
-      password: body.password,
-    });
-    if (signedIn.error || !signedIn.data.session) return invalid();
+    if (!signedIn.ok) return invalid();
+    const session = await signedIn.json();
+    if (!session.access_token || !session.refresh_token) return invalid();
     return response(200, {
-      access_token: signedIn.data.session.access_token,
-      refresh_token: signedIn.data.session.refresh_token,
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
     });
-  } catch {
+  } catch (error) {
+    console.error("student-login failure", stage, error);
     return response(400, { error: "Unable to sign in. Check your details and try again." });
   }
 });
