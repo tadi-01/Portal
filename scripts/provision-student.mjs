@@ -24,7 +24,16 @@ assert.ok(
     record.studentNumber.trim(),
   'Student number required',
 )
-assert.ok(record.name && record.programme, 'Registry name and programme required')
+assert.ok(
+  record.name &&
+    record.programmeCode &&
+    record.programmeName &&
+    Number.isInteger(record.part) &&
+    record.part > 0 &&
+    Number.isInteger(record.semester) &&
+    record.semester > 0,
+  'Name, programme code, programme name, part and semester are required',
+)
 let createdId
 let linked = false
 try {
@@ -41,6 +50,18 @@ try {
       identity.data.user.email?.toLowerCase() !== record.email.toLowerCase()
     )
       throw new Error('Existing identity differs; manual review required')
+    const updated = await admin
+      .from('students')
+      .update({
+        display_name: record.name,
+        programme_code: record.programmeCode,
+        programme_name: record.programmeName,
+        academic_year: record.academicYear ?? null,
+        part: record.part,
+        semester: record.semester,
+      })
+      .eq('student_number', record.studentNumber.trim())
+    if (updated.error) throw new Error('Student details update failed')
     console.log('Student already provisioned. Password and existing records left unchanged.')
   } else {
     // This development-only import sends no email. Production must use verified activation.
@@ -58,11 +79,11 @@ try {
       auth_user_id: createdId,
       student_number: record.studentNumber.trim(),
       display_name: record.name,
-      programme_code: record.programme,
-      programme_name: record.programmeName ?? null,
+      programme_code: record.programmeCode,
+      programme_name: record.programmeName,
       academic_year: record.academicYear ?? null,
-      part: record.part ?? null,
-      semester: record.semester ?? null,
+      part: record.part,
+      semester: record.semester,
       // No registration status, marks, fees or eligibility is inferred from the old demo.
     })
     if (inserted.error) throw new Error('Student linking failed')

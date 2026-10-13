@@ -762,6 +762,9 @@ begin
   update fieldnotes.registration_requests set status = decision, reviewed_at = now(), reviewed_by = auth.uid() where id = r.id;
   if decision = 'approved' then
     insert into fieldnotes.enrollments(student_id, offering_id) values (r.student_id, r.offering_id) on conflict do nothing;
+    update fieldnotes.students set registration_status = 'Registered' where id = r.student_id;
+  elsif decision = 'rejected' then
+    update fieldnotes.students set registration_status = 'Not registered' where id = r.student_id;
   end if;
 end $$;
 
