@@ -62,10 +62,12 @@ npx.cmd supabase functions deploy student-login --use-api
 
 1. Open [`supabase/seed.sql`](../supabase/seed.sql) in your code editor.
 2. At the top of the file (lines 20-21), set your values:
+
    ```sql
    v_programme   text := 'SCS';               -- Your academic programme code
    v_admin_email text := 'admin@example.com'; -- The admin email you created in step 1.4
    ```
+
 3. Copy the entire file contents.
 4. In the Supabase dashboard, go to **SQL Editor**, paste the script, and click **Run**.
    *(This enables course registration, adds semester terms, sample courses, assessments, and promotes your user to admin)*.
@@ -78,7 +80,7 @@ Create a small JSON file outside the project directory (e.g., `C:\temp\student.j
 {
   "email": "student@example.com",
   "password": "Password123!",
-  "studentNumber": "N02512345X",
+  "studentNumber": "N02612345X",
   "name": "Alex Taylor",
   "programmeCode": "SCS",
   "programmeName": "Computer Science",
@@ -123,7 +125,6 @@ git push origin master
 ### 2.3 Add Environment Variables
 
 Under the **Environment Variables** section on Vercel, add:
-
 
 | Key                             | Value                                    | Description                          |
 | --------------------------------- | ------------------------------------------ | -------------------------------------- |

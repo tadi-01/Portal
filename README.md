@@ -57,7 +57,7 @@ The project reference is the 20 letters at the start of your project URL.
 {
   "email": "student@example.com",
   "password": "Password123!",
-  "studentNumber": "N02512345X",
+  "studentNumber": "N02612345X",
   "name": "Alex Taylor",
   "programmeCode": "SCS",
   "programmeName": "Computer Science",
