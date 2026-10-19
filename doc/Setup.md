@@ -96,7 +96,7 @@ Ensure all changes are committed and pushed to your remote repository:
 ```powershell
 git add .
 git commit -m "Prepare for Vercel deployment"
-git push origin main
+git push origin master
 ```
 
 ### 2.2 Import to Vercel
