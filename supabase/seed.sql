@@ -38,9 +38,9 @@ begin
   -- 2-3. Three courses, each with a class, two assessments and an exam time
   for c in
     select * from (values
-      ('SCS101', 'Introduction to Programming'),
-      ('SCS102', 'Database Systems'),
-      ('SCS103', 'Web Development')
+      ('SCS1101', 'Introduction to Programming'),
+      ('SCS1102', 'Database Systems'),
+      ('SCS1103', 'Web Development')
     ) as t(code, name)
   loop
     insert into fieldnotes.courses (code, name) values (c.code, c.name)

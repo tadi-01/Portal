@@ -6,8 +6,9 @@ approve registrations, publish marks and add resources.
 
 **Built with**
 
+
 | Tool       | What it does here                                                  |
-| ---------- | ------------------------------------------------------------------ |
+| ------------ | -------------------------------------------------------------------- |
 | Vue 3      | Draws the pages the user sees                                      |
 | Vue Router | Decides which page appears for which web address                   |
 | Pinia      | Holds the logged-in user's data so every page can share it         |
@@ -42,7 +43,6 @@ npx.cmd supabase functions deploy student-login --use-api
 The project reference is the 20 letters at the start of your project URL.
 
 3. **Expose the `fieldnotes` schema.** Now that `db push` created the schema, make it accessible to the portal. In the Supabase dashboard go to **Project Settings -> API**, add `fieldnotes` to **Exposed schemas**, and save. Skip this and every page fails with an "invalid schema" error.
-
 4. In the Supabase dashboard go to **Authentication -> Users -> Add user** and create the
    admin account (an email and a password). Tick **Auto Confirm User**, otherwise the login
    can fail with an unconfirmed-email error.

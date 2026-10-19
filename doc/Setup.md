@@ -16,6 +16,7 @@ This guide details how to set up the **Supabase** backend and deploy the **Field
 ## 1. Supabase Backend Setup
 
 ### 1.1 Create the Project
+
 1. Log in to [supabase.com](https://supabase.com) and click **New Project**.
 2. Set a name and strong database password, then choose your region.
 3. Once provisioned, navigate to **Project Settings -> API** and copy:
@@ -24,6 +25,7 @@ This guide details how to set up the **Supabase** backend and deploy the **Field
    - **Project Reference ID** (the 20-character identifier at the start of your URL, e.g., `abcdefghijklmnopqrst`).
 
 ### 1.2 Deploy Database Migrations & Edge Function
+
 Open PowerShell or your terminal in the project directory:
 
 ```powershell
@@ -41,19 +43,23 @@ npx.cmd supabase functions deploy student-login --use-api
 ```
 
 ### 1.3 Expose the `fieldnotes` Schema
+
 > [!IMPORTANT]
 > The portal stores its tables and views in a custom PostgreSQL schema named `fieldnotes`. Supabase hides custom schemas by default. Now that `db push` has created the schema in PostgreSQL, expose it to the API:
+
 1. In the Supabase dashboard, go to **Project Settings -> API**.
 2. Scroll to **Exposed schemas**.
 3. Select `fieldnotes` from the list and click **Save**.
 
 ### 1.4 Create the Admin Account
+
 1. Go to **Authentication -> Users** in the Supabase dashboard.
 2. Click **Add user -> Create user**.
 3. Enter your admin email and password.
 4. **Check "Auto Confirm User"** (if not confirmed, login will be rejected).
 
 ### 1.5 Seed Initial Data
+
 1. Open [`supabase/seed.sql`](../supabase/seed.sql) in your code editor.
 2. At the top of the file (lines 20-21), set your values:
    ```sql
@@ -65,6 +71,7 @@ npx.cmd supabase functions deploy student-login --use-api
    *(This enables course registration, adds semester terms, sample courses, assessments, and promotes your user to admin)*.
 
 ### 1.6 Provision a Student Account
+
 Create a small JSON file outside the project directory (e.g., `C:\temp\student.json`):
 
 ```json
@@ -83,6 +90,7 @@ Create a small JSON file outside the project directory (e.g., `C:\temp\student.j
 ```
 
 Run the provision script from the project root:
+
 ```powershell
 node scripts/provision-student.mjs --development --input C:\temp\student.json
 ```
@@ -92,7 +100,9 @@ node scripts/provision-student.mjs --development --input C:\temp\student.json
 ## 2. Vercel Frontend Deployment
 
 ### 2.1 Push to Git
+
 Ensure all changes are committed and pushed to your remote repository:
+
 ```powershell
 git add .
 git commit -m "Prepare for Vercel deployment"
@@ -100,6 +110,7 @@ git push origin master
 ```
 
 ### 2.2 Import to Vercel
+
 1. Log in to [vercel.com](https://vercel.com) and click **Add New... -> Project**.
 2. Select your Git repository and click **Import**.
 3. Configure the project:
@@ -110,14 +121,17 @@ git push origin master
    - **Install Command**: `npm install`
 
 ### 2.3 Add Environment Variables
+
 Under the **Environment Variables** section on Vercel, add:
 
-| Key | Value | Description |
-| --- | --- | --- |
-| `VITE_SUPABASE_URL` | `https://<your-project-ref>.supabase.co` | Your Supabase project URL |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | `<your-publishable-key>` | Supabase anon/publishable public key |
+
+| Key                             | Value                                    | Description                          |
+| --------------------------------- | ------------------------------------------ | -------------------------------------- |
+| `VITE_SUPABASE_URL`             | `https://<your-project-ref>.supabase.co` | Your Supabase project URL            |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | `<your-publishable-key>`                 | Supabase anon/publishable public key |
 
 ### 2.4 Deploy
+
 Click **Deploy**. Vercel will install dependencies, build the Vue 3 app, and provide your live production URL.
 
 ---
@@ -132,6 +146,7 @@ Click **Deploy**. Vercel will install dependencies, build the Vue 3 app, and pro
 ## 3. Verification & Testing
 
 Because a browser keeps one active Supabase authentication session at a time, use two windows to test:
+
 1. **Student Login**:
    - Open normal browser window to `/login`.
    - Log in with Student Number (e.g., `N02512345X`) and the password you provisioned.

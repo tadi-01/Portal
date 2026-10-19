@@ -4,6 +4,7 @@ import type { Database } from '@/types/database'
 export type Row<T extends keyof Database['fieldnotes']['Tables']> =
   Database['fieldnotes']['Tables'][T]['Row']
 
+
 /** Fail closed; RLS is the authority. Explicit pages avoid the API's row cap. */
 export async function readTable<T extends keyof Database['fieldnotes']['Tables']>(
   table: T,
