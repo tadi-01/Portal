@@ -58,11 +58,11 @@ The project reference is the 20 letters at the start of your project URL.
 ```json
 {
   "email": "student@example.com",
-  "password": "ChooseAPassword1",
-  "studentNumber": "N0001",
-  "name": "Tadiwa Example",
-  "programmeCode": "GENERAL",
-  "programmeName": "General Studies",
+  "password": "Password123!",
+  "studentNumber": "N02512345X",
+  "name": "Alex Taylor",
+  "programmeCode": "SCS",
+  "programmeName": "Computer Science",
   "academicYear": "2026",
   "part": 1,
   "semester": 1,
@@ -99,9 +99,10 @@ Portal/
 │   ├── seed.sql                sample courses and the admin account (step 4 above)
 │   ├── functions/student-login/ lets students log in with a student number
 │   └── config.toml             Supabase settings (keeps the login function reachable)
+├── doc/                        setup guide, presenter notes, and defense FAQs
 ├── scripts/                    creates student logins (step 5 above)
 ├── .env.example                the two settings you must provide
-└── package.json, vite.config.ts, index.html, tsconfig*.json, env.d.ts, CNAME, public/
+└── package.json, vite.config.ts, index.html, tsconfig*.json, env.d.ts, public/
 ```
 
 ## How it works
@@ -148,28 +149,20 @@ only one Supabase login at a time.
 6. **Show the security** - as the student, try opening `/staff` (you are sent back). In
    Supabase's table editor, point out that the data lives in real tables.
 
-## Questions you may be asked
+## Documentation & Defense Preparation
 
-- **Why Supabase?** It provides a hosted PostgreSQL database, user login and security rules
-   together, so there is no separate backend server to build and run.
-- **What is row-level security?** A rule inside the database that decides which rows each
-   user may read or change. It means security does not depend on the web page behaving.
-- **How are passwords stored?** We never store them. Supabase's login system stores a
-   one-way hash.
-- **Why does the login use a function?** Students know their student number, but Supabase
-   logs in with email. The function translates one into the other on the server.
-- **Who wrote the code?** Be direct: the starting code was generated with AI, then you
-   reviewed it, simplified it and learned how it works. Say which parts you can explain.
+For in-depth guides, presentation resources, and defense FAQs, refer to the documentation in [`doc/`](doc/):
+- **[Setup & Deployment Guide](doc/Setup.md)**: Full steps for Supabase database setup and Vercel hosting.
+- **[Presenter Notes & Demo Script](doc/presenter_notes.md)**: Presentation outline, timeline, and dual-window live demo walkthrough.
+- **[Questions You May Be Asked](doc/questions_you_may_be_asked.md)**: Technical, architectural, and security answers for defense preparation.
 
-## What is not finished
+## Proposed Future Work
 
-- Admin screens for creating courses, terms, assessments and exam times were removed to
-   keep the admin page small. This data is added with `seed.sql` or the Supabase dashboard.
-   (The database functions for them still exist and could get screens later.)
-- The grade is typed by the admin; there is no automatic grade or GPA calculation, and the
-   *Coursework* page is a placeholder.
-- _Account_ (payments) is read-only. Rows must be added to the `account_transactions`
-   table by hand.
-- A browser keeps one Supabase login, so use a private window to test two roles at once.
+- **Administrative Management Interfaces**: UI screens for staff to schedule academic terms, manage course offerings, create assessments, and publish exam timetables directly from the portal.
+- **Automated Academic Grading & GPA**: Automated calculation of weighted course marks and Grade Point Averages (GPA) upon exam score publishing.
+- **Interactive Coursework Modules**: Online coursework submission and rubric-based feedback delivery directly within the portal.
+- **Payment Gateway Integration**: Self-service student tuition and fee payment processing via external payment gateways (e.g., Stripe, Paynow) with automated receipt generation.
 
-Never commit `.env.local`, any secret or service-role key, or a student details file.
+---
+
+Never commit `.env.local`, any secret or service-role key, or private student details.

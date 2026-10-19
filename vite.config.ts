@@ -6,9 +6,6 @@ import vueDevTools from "vite-plugin-vue-devtools";
 
 // https://vite.dev/config/
 export default defineConfig({
-  server: {
-    allowedHosts: ["divine-seating-haven-weights.trycloudflare.com"],
-  },
   plugins: [vue(), vueDevTools()],
   resolve: {
     alias: {
