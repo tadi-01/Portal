@@ -6,12 +6,12 @@ approve registrations, publish marks and add resources.
 
 **Built with**
 
-| Tool | What it does here |
-| --- | --- |
-| Vue 3 | Draws the pages the user sees |
-| Vue Router | Decides which page appears for which web address |
-| Pinia | Holds the logged-in user's data so every page can share it |
-| Supabase | The database (PostgreSQL), the login system and the security rules |
+| Tool       | What it does here                                                  |
+| ---------- | ------------------------------------------------------------------ |
+| Vue 3      | Draws the pages the user sees                                      |
+| Vue Router | Decides which page appears for which web address                   |
+| Pinia      | Holds the logged-in user's data so every page can share it         |
+| Supabase   | The database (PostgreSQL), the login system and the security rules |
 
 ## Run it
 
@@ -30,11 +30,7 @@ Open http://localhost:5173. To check that everything compiles: `npm run build`.
 
 1. Create a project at supabase.com and copy its URL and publishable key into `.env.local`
    (find them under **Project Settings -> API**). Restart `npm run dev` afterwards.
-2. **Expose the `fieldnotes` schema.** The portal keeps its tables in a schema called
-   `fieldnotes`, and Supabase hides custom schemas by default. In **Project Settings -> API**,
-   add `fieldnotes` to **Exposed schemas** and save. Skip this and every page fails with an
-   "invalid schema" error.
-3. Install the tables, rules and functions:
+2. Install the tables, rules and functions:
 
 ```powershell
 npx.cmd supabase login
@@ -44,6 +40,8 @@ npx.cmd supabase functions deploy student-login --use-api
 ```
 
 The project reference is the 20 letters at the start of your project URL.
+
+3. **Expose the `fieldnotes` schema.** Now that `db push` created the schema, make it accessible to the portal. In the Supabase dashboard go to **Project Settings -> API**, add `fieldnotes` to **Exposed schemas**, and save. Skip this and every page fails with an "invalid schema" error.
 
 4. In the Supabase dashboard go to **Authentication -> Users -> Add user** and create the
    admin account (an email and a password). Tick **Auto Confirm User**, otherwise the login
@@ -152,8 +150,9 @@ only one Supabase login at a time.
 ## Documentation & Defense Preparation
 
 For in-depth guides, presentation resources, and defense FAQs, refer to the documentation in [`doc/`](doc/):
-- **[Setup & Deployment Guide](doc/Setup.md)**: Full steps for Supabase database setup and Vercel hosting.
-- **[Presenter Notes & Demo Script](doc/presenter_notes.md)**: Presentation outline, timeline, and dual-window live demo walkthrough.
+
+- **[Setup &amp; Deployment Guide](doc/Setup.md)**: Full steps for Supabase database setup and Vercel hosting.
+- **[Presenter Notes &amp; Demo Script](doc/presenter_notes.md)**: Presentation outline, timeline, and dual-window live demo walkthrough.
 - **[Questions You May Be Asked](doc/questions_you_may_be_asked.md)**: Technical, architectural, and security answers for defense preparation.
 
 ## Proposed Future Work

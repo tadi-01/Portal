@@ -23,14 +23,7 @@ This guide details how to set up the **Supabase** backend and deploy the **Field
    - **Publishable / Anon Key**
    - **Project Reference ID** (the 20-character identifier at the start of your URL, e.g., `abcdefghijklmnopqrst`).
 
-### 1.2 Expose the `fieldnotes` Schema
-> [!IMPORTANT]
-> The portal stores its tables and views in a custom PostgreSQL schema named `fieldnotes`. Supabase hides custom schemas by default.
-1. In the Supabase dashboard, go to **Project Settings -> API**.
-2. Scroll to **Exposed schemas**.
-3. Add `fieldnotes` to the list and click **Save**.
-
-### 1.3 Deploy Database Migrations & Edge Function
+### 1.2 Deploy Database Migrations & Edge Function
 Open PowerShell or your terminal in the project directory:
 
 ```powershell
@@ -46,6 +39,13 @@ npx.cmd supabase db push --linked
 # Deploy the student-login Edge Function
 npx.cmd supabase functions deploy student-login --use-api
 ```
+
+### 1.3 Expose the `fieldnotes` Schema
+> [!IMPORTANT]
+> The portal stores its tables and views in a custom PostgreSQL schema named `fieldnotes`. Supabase hides custom schemas by default. Now that `db push` has created the schema in PostgreSQL, expose it to the API:
+1. In the Supabase dashboard, go to **Project Settings -> API**.
+2. Scroll to **Exposed schemas**.
+3. Select `fieldnotes` from the list and click **Save**.
 
 ### 1.4 Create the Admin Account
 1. Go to **Authentication -> Users** in the Supabase dashboard.
