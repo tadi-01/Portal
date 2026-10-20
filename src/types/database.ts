@@ -416,6 +416,7 @@ export type Database = {
         Args: never
         Returns: {
           request_id: string
+          student_id: string
           student_number: string
           student_name: string
           programme_code: string
@@ -428,7 +429,11 @@ export type Database = {
         }[]
       }
       admin_review_registration: {
-        Args: { decision: string; target_request: string }
+        Args: { decision: 'approved' | 'rejected' | 'reversed' | string; target_request: string }
+        Returns: undefined
+      }
+      admin_reset_student_registration: {
+        Args: { target_student: string }
         Returns: undefined
       }
       admin_save_registry_configuration: {

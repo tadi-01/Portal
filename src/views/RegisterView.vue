@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div>
     <div class="eyebrow">ADMINISTRATION / COURSE REGISTRATION</div>
     <h1 class="page-masthead">Ready for the semester.</h1>
@@ -22,8 +22,17 @@
           <h2>Choose your courses</h2>
           <p v-if="error" class="alert alert--danger">{{ error }}</p>
           <p v-if="message" class="alert alert--info" role="status">{{ message }}</p>
-          <label v-for="course in offerings" :key="course.offering_id" class="course-choice">
-            <input v-model="course.selected" type="checkbox" :disabled="busy" @change="toggleCourse(course)" />
+          <label
+            v-for="course in offerings"
+            :key="course.offering_id"
+            :class="['course-choice', { 'course-choice--disabled': !canSubmit }]"
+          >
+            <input
+              v-model="course.selected"
+              type="checkbox"
+              :disabled="busy || !canSubmit"
+              @change="toggleCourse(course)"
+            />
             <span><strong>{{ course.course_code }} · {{ course.course_name }}</strong><small>{{ course.term_label }} · {{ course.credits }} credits</small></span>
           </label>
           <button
@@ -34,8 +43,11 @@
           >
             Submit registration ({{ selectedCount }} selected)
           </button>
+          <p v-else-if="isRegistered" class="alert alert--info">
+            Registration confirmed. Your course selections are locked. If you need to change your courses, please contact an administrator.
+          </p>
           <p v-else class="alert alert--info">
-            Registration submitted. An admin will review your course choices.
+            Registration submitted and awaiting admin approval. Course selections are locked. If you made an error, please contact an administrator to reopen your registration.
           </p>
         </div>
       </section>
@@ -68,6 +80,7 @@ const error = ref('')
 const message = ref('')
 const selectedCount = computed(() => offerings.value.filter((course) => course.selected).length)
 const canSubmit = computed(() => !['SUBMITTED', 'REGISTERED'].includes(store.student.registrationStatus.toUpperCase()))
+const isRegistered = computed(() => store.student.registrationStatus.toUpperCase() === 'REGISTERED')
 onMounted(async () => {
   try {
     const result = await getSupabaseClient().rpc('registration_offerings')
@@ -78,15 +91,20 @@ onMounted(async () => {
   }
 })
 async function toggleCourse(course: (typeof offerings.value)[number]) {
+  if (!canSubmit.value || busy.value) return
   const result = await getSupabaseClient().rpc('set_registration_choice', {
     target_offering: course.offering_id,
     selected: course.selected,
   })
   if (result.error) {
     course.selected = !course.selected
-    error.value = result.error.message.includes('REGISTRY_CONFIGURATION_REQUIRED')
-      ? 'Registration is not open yet.'
-      : 'The course selection could not be saved.'
+    if (result.error.message.includes('REGISTRATION_ALREADY_LOCKED')) {
+      error.value = 'Your registration has already been submitted and locked.'
+    } else if (result.error.message.includes('REGISTRY_CONFIGURATION_REQUIRED')) {
+      error.value = 'Registration is not open yet.'
+    } else {
+      error.value = 'The course selection could not be saved.'
+    }
   }
 }
 async function submit() {
@@ -118,6 +136,13 @@ async function submit() {
   gap: 12px;
   padding: 12px 0;
   border-top: 1px solid var(--clr-border-light);
+}
+.course-choice--disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+.course-choice input:disabled {
+  cursor: not-allowed;
 }
 .course-choice span {
   display: grid;

@@ -30,6 +30,7 @@ const roster = ref<{ enrollment_id: string; student_number: string; display_name
 const registrationRequests = ref<
   {
     request_id: string
+    student_id: string
     student_number: string
     student_name: string
     course_code: string
@@ -38,6 +39,19 @@ const registrationRequests = ref<
     status: string
   }[]
 >([])
+
+function requestStatusChip(status: string): string {
+  switch (status.trim().toLowerCase()) {
+    case 'approved':
+      return 'chip--success'
+    case 'submitted':
+      return 'chip--warning'
+    case 'rejected':
+      return 'chip--danger'
+    default:
+      return 'chip--neutral'
+  }
+}
 
 // What the admin has typed or selected
 const offering = ref('')
@@ -150,15 +164,29 @@ async function perform(
   }
 }
 
-// 1. REGISTRATIONS - approving also creates the student's enrolment in the database
-const reviewRegistration = (requestId: string, decision: 'approved' | 'rejected') =>
+// 1. REGISTRATIONS - approve, reject, or reverse course choices
+const reviewRegistration = (
+  requestId: string,
+  decision: 'approved' | 'rejected' | 'reversed',
+) =>
   perform(
     () =>
       getSupabaseClient().rpc('admin_review_registration', {
         target_request: requestId,
         decision,
       }),
-    `Registration ${decision}.`,
+    decision === 'reversed'
+      ? 'Registration reversed. Course request reopened as draft.'
+      : `Registration ${decision}.`,
+  )
+
+const resetStudentRegistration = (studentId: string, studentName: string) =>
+  perform(
+    () =>
+      getSupabaseClient().rpc('admin_reset_student_registration', {
+        target_student: studentId,
+      }),
+    `All registrations for ${studentName} reset to draft. Student can choose courses again.`,
   )
 
 // 2. MARKS - a mark moves through four steps: draft -> submitted -> approved -> published
@@ -258,7 +286,7 @@ const saveSettings = () =>
     <!-- Registrations apply to every course, so no course needs to be selected -->
     <section v-if="activeTab === 'registrations'" class="personal-record">
       <h2>Registrations</h2>
-      <p>Approving a request enrols the student in that course.</p>
+      <p>Approving a request enrols the student. You can reverse registrations if a student made an error.</p>
       <div class="table-scroll" tabindex="0" role="region" aria-label="Registration requests">
         <table class="data-table">
           <thead>
@@ -275,24 +303,74 @@ const saveSettings = () =>
               <td>{{ request.student_number }} / {{ request.student_name }}</td>
               <td>{{ request.course_code }} / {{ request.course_name }}</td>
               <td>{{ request.term_label }}</td>
-              <td>{{ request.status }}</td>
               <td>
-                <template v-if="request.status === 'submitted'">
-                  <button
-                    class="btn btn--ghost btn--sm"
-                    :disabled="busy"
-                    @click="reviewRegistration(request.request_id, 'approved')"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    class="btn btn--ghost btn--sm"
-                    :disabled="busy"
-                    @click="reviewRegistration(request.request_id, 'rejected')"
-                  >
-                    Reject
-                  </button>
-                </template>
+                <span :class="['chip', requestStatusChip(request.status)]">{{ request.status }}</span>
+              </td>
+              <td>
+                <div class="registration-row-actions">
+                  <template v-if="request.status === 'submitted'">
+                    <button
+                      class="btn btn--ghost btn--sm"
+                      :disabled="busy"
+                      @click="reviewRegistration(request.request_id, 'approved')"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      class="btn btn--ghost btn--sm"
+                      :disabled="busy"
+                      @click="reviewRegistration(request.request_id, 'rejected')"
+                    >
+                      Reject
+                    </button>
+                    <button
+                      class="btn btn--ghost btn--sm"
+                      :disabled="busy"
+                      title="Reopen as draft so the student can edit"
+                      @click="reviewRegistration(request.request_id, 'reversed')"
+                    >
+                      Reopen
+                    </button>
+                  </template>
+                  <template v-else-if="request.status === 'approved'">
+                    <button
+                      class="btn btn--ghost btn--sm"
+                      :disabled="busy"
+                      title="Reverse registration and un-enrol student"
+                      @click="reviewRegistration(request.request_id, 'reversed')"
+                    >
+                      Reverse
+                    </button>
+                    <button
+                      class="btn btn--ghost btn--sm"
+                      :disabled="busy"
+                      title="Reset all registrations for this student"
+                      @click="resetStudentRegistration(request.student_id, request.student_name)"
+                    >
+                      Reset all
+                    </button>
+                  </template>
+                  <template v-else-if="request.status === 'rejected'">
+                    <button
+                      class="btn btn--ghost btn--sm"
+                      :disabled="busy"
+                      @click="reviewRegistration(request.request_id, 'approved')"
+                    >
+                      Approve
+                    </button>
+                    <button
+                      class="btn btn--ghost btn--sm"
+                      :disabled="busy"
+                      title="Reopen as draft so the student can change choice"
+                      @click="reviewRegistration(request.request_id, 'reversed')"
+                    >
+                      Reopen
+                    </button>
+                  </template>
+                  <template v-else-if="request.status === 'draft'">
+                    <span class="text-muted">Draft</span>
+                  </template>
+                </div>
               </td>
             </tr>
           </tbody>
@@ -481,5 +559,15 @@ const saveSettings = () =>
 .staff-tab--active {
   border-bottom-color: var(--clr-primary);
   color: var(--clr-primary);
+}
+.registration-row-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.text-muted {
+  color: var(--clr-text-muted);
+  font-size: 13px;
 }
 </style>

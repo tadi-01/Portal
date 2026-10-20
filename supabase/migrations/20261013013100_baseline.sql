@@ -727,6 +727,13 @@ begin
   if (not fieldnotes.registry_capability('registration_submission')) then
     raise exception using errcode = 'P0001', message = 'REGISTRY_CONFIGURATION_REQUIRED';
   end if;
+  if exists (
+    select 1 from fieldnotes.students s
+    where s.id = fieldnotes_private.student_id()
+      and upper(s.registration_status) in ('SUBMITTED', 'REGISTERED')
+  ) then
+    raise exception using errcode = '42501', message = 'REGISTRATION_ALREADY_LOCKED';
+  end if;
   if selected then
     insert into fieldnotes.registration_requests(student_id, offering_id)
     values (fieldnotes_private.student_id(), target_offering)
@@ -751,9 +758,9 @@ begin
 end $$;
 
 create or replace function fieldnotes.admin_registration_requests()
-returns table (request_id uuid, student_number text, student_name text, programme_code text, course_code text, course_name text, term_label text, credits numeric, status text, submitted_at timestamptz)
+returns table (request_id uuid, student_id uuid, student_number text, student_name text, programme_code text, course_code text, course_name text, term_label text, credits numeric, status text, submitted_at timestamptz)
 language sql security definer set search_path = '' as $$
-  select r.id, s.student_number, s.display_name, s.programme_code, c.code, c.name, t.label, o.credits, r.status, r.submitted_at
+  select r.id, s.id, s.student_number, s.display_name, s.programme_code, c.code, c.name, t.label, o.credits, r.status, r.submitted_at
   from fieldnotes.registration_requests r
   join fieldnotes.students s on s.id = r.student_id
   join fieldnotes.course_offerings o on o.id = r.offering_id
@@ -768,19 +775,92 @@ returns void language plpgsql security definer set search_path = '' as $$
 declare r fieldnotes.registration_requests%rowtype;
 begin
   perform fieldnotes_private.require_admin();
-  if decision not in ('approved', 'rejected') then raise exception using errcode = '22023', message = 'INVALID_DECISION'; end if;
+  if decision not in ('approved', 'rejected', 'reversed') then
+    raise exception using errcode = '22023', message = 'INVALID_DECISION';
+  end if;
   select * into r from fieldnotes.registration_requests where id = target_request for update;
   if r.id is null then raise exception using errcode = '22023', message = 'REQUEST_NOT_FOUND'; end if;
-  update fieldnotes.registration_requests set status = decision, reviewed_at = now(), reviewed_by = auth.uid() where id = r.id;
+
   if decision = 'approved' then
+    update fieldnotes.registration_requests
+    set status = 'approved', reviewed_at = now(), reviewed_by = auth.uid()
+    where id = r.id;
     insert into fieldnotes.enrollments(student_id, offering_id) values (r.student_id, r.offering_id) on conflict do nothing;
     update fieldnotes.students set registration_status = 'Registered' where id = r.student_id;
   elsif decision = 'rejected' then
-    update fieldnotes.students set registration_status = 'Not registered' where id = r.student_id;
+    update fieldnotes.registration_requests
+    set status = 'rejected', reviewed_at = now(), reviewed_by = auth.uid()
+    where id = r.id;
+    delete from fieldnotes.enrollments
+    where student_id = r.student_id and offering_id = r.offering_id;
+    if exists (select 1 from fieldnotes.registration_requests where student_id = r.student_id and status = 'approved') then
+      update fieldnotes.students set registration_status = 'Registered' where id = r.student_id;
+    elsif exists (select 1 from fieldnotes.registration_requests where student_id = r.student_id and status = 'submitted') then
+      update fieldnotes.students set registration_status = 'Submitted' where id = r.student_id;
+    else
+      update fieldnotes.students set registration_status = 'Not registered' where id = r.student_id;
+    end if;
+  elsif decision = 'reversed' then
+    if exists (
+      select 1 from fieldnotes.enrollments e
+      join fieldnotes.marks m on m.enrollment_id = e.id and m.offering_id = e.offering_id
+      where e.student_id = r.student_id and e.offering_id = r.offering_id
+    ) or exists (
+      select 1 from fieldnotes.enrollments e
+      join fieldnotes.released_results rr on rr.enrollment_id = e.id
+      where e.student_id = r.student_id and e.offering_id = r.offering_id
+    ) then
+      raise exception using errcode = '22023', message = 'CANNOT_REVERSE_ACTIVE_MARKS';
+    end if;
+
+    delete from fieldnotes.enrollments
+    where student_id = r.student_id and offering_id = r.offering_id;
+
+    update fieldnotes.registration_requests
+    set status = 'draft', submitted_at = null, reviewed_at = null, reviewed_by = null
+    where id = r.id;
+
+    if exists (select 1 from fieldnotes.registration_requests where student_id = r.student_id and status = 'approved') then
+      update fieldnotes.students set registration_status = 'Registered' where id = r.student_id;
+    elsif exists (select 1 from fieldnotes.registration_requests where student_id = r.student_id and status = 'submitted') then
+      update fieldnotes.students set registration_status = 'Submitted' where id = r.student_id;
+    else
+      update fieldnotes.students set registration_status = 'Not registered' where id = r.student_id;
+    end if;
   end if;
+end $$;
+
+create or replace function fieldnotes.admin_reset_student_registration(target_student uuid)
+returns void language plpgsql security definer set search_path = '' as $$
+begin
+  perform fieldnotes_private.require_admin();
+
+  if exists (
+    select 1 from fieldnotes.enrollments e
+    join fieldnotes.marks m on m.enrollment_id = e.id and m.offering_id = e.offering_id
+    where e.student_id = target_student
+  ) or exists (
+    select 1 from fieldnotes.enrollments e
+    join fieldnotes.released_results rr on rr.enrollment_id = e.id
+    where e.student_id = target_student
+  ) then
+    raise exception using errcode = '22023', message = 'CANNOT_REVERSE_ACTIVE_MARKS';
+  end if;
+
+  delete from fieldnotes.enrollments
+  where student_id = target_student;
+
+  update fieldnotes.registration_requests
+  set status = 'draft', submitted_at = null, reviewed_at = null, reviewed_by = null
+  where student_id = target_student;
+
+  update fieldnotes.students
+  set registration_status = 'Not registered'
+  where id = target_student;
 end $$;
 
 grant execute on function fieldnotes.registration_offerings(), fieldnotes.set_registration_choice(uuid, boolean),
   fieldnotes.submit_registration(), fieldnotes.admin_registration_requests(),
-  fieldnotes.admin_review_registration(uuid, text) to authenticated;
+  fieldnotes.admin_review_registration(uuid, text),
+  fieldnotes.admin_reset_student_registration(uuid) to authenticated;
 commit;

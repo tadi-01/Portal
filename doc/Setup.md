@@ -45,9 +45,9 @@ npx.cmd supabase functions deploy student-login --use-api
 ### 1.3 Expose the `fieldnotes` Schema
 
 > [!IMPORTANT]
-> The portal stores its tables and views in a custom PostgreSQL schema named `fieldnotes`. Supabase hides custom schemas by default. Now that `db push` has created the schema in PostgreSQL, expose it to the API:
+> The portal stores its tables and views in a custom PostgreSQL schema named `fieldnotes`. Supabase hides custom schemas by default. 
 
-1. In the Supabase dashboard, go to **Project Settings -> API**.
+1. In the Supabase dashboard, go to **Project Settings -> Data API -> Settings**.
 2. Scroll to **Exposed schemas**.
 3. Select `fieldnotes` from the list and click **Save**.
 
@@ -82,7 +82,7 @@ Create a small JSON file outside the project directory (e.g., `C:\temp\student.j
   "studentNumber": "N02612345X",
   "name": "Alex Taylor",
   "programmeCode": "SCS",
-  "programmeName": "Computer Science",
+  "programmeName": "BSc Hons in Computer Science",
   "academicYear": "2026",
   "part": 1,
   "semester": 1,
@@ -135,24 +135,15 @@ Under the **Environment Variables** section on Vercel, add:
 
 Click **Deploy**. Vercel will install dependencies, build the Vue 3 app, and provide your live production URL.
 
----
-
-## Key Deployment Files Included in the Project
-
-- **[`.npmrc`](../.npmrc)**: Configures `legacy-peer-deps=true` so `@vercel/analytics` and `vue-router` install cleanly during Vercel's build step.
-- **[`vercel.json`](../vercel.json)**: Configures SPA rewrites (`/(.*) -> /index.html`) to prevent 404 errors when refreshing on client-side routes like `/login` or `/staff`.
-
----
-
 ## 3. Verification & Testing
 
 Because a browser keeps one active Supabase authentication session at a time, use two windows to test:
 
 1. **Student Login**:
    - Open normal browser window to `/login`.
-   - Log in with Student Number (e.g., `N02512345X`) and the password you provisioned.
-   - Go to **Registration**, select courses, and submit.
+   - Log in with Student Number (e.g., `N02612345X`) and the password you provisioned.
+   - Go to **Registration**, select courses, and submit (checkboxes lock upon submission to prevent accidental modifications).
 2. **Staff / Admin Login**:
    - Open an **Incognito / Private** window to `/staff/login`.
    - Log in with the admin email and password.
-   - Go to **Registrations** to approve the student's enrollment, and **Marks & Results** to publish grades.
+   - Go to **Registrations** to approve the student's enrollment (or click **Reverse** / **Reset all** to reopen registration if a student mistakenly enrolled in the wrong courses), and **Marks & Results** to publish grades.

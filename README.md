@@ -2,7 +2,7 @@
 
 A student portal with database intergration. Students log in with their student number to see their courses,
 results, payments, exam timetable and study resources. An admin logs in separately to
-approve registrations, publish marks and add resources.
+approve or reverse registrations, publish marks and add resources.
 
 **Built with**
 
@@ -29,15 +29,14 @@ Open http://localhost:5173. To check that everything compiles: `npm run build`.
 
 ## Set up the database (once)
 
-1. Create a project at supabase.com and copy its URL and publishable key into `.env.local`
-   (find them under **Project Settings -> API**). Restart `npm run dev` afterwards.
+1. Create a project at supabase.com and copy its URL and publishable key into `.env.local`. Restart `npm run dev` afterwards.
 2. Install the tables, rules and functions:
 
 ```powershell
-npx supabase login
-npx supabase link --project-ref <your-project-reference>
-npx supabase db push --linked
-npx supabase functions deploy student-login --use-api
+npx.cmd supabase login
+npx.cmd supabase link --project-ref <your-project-reference>
+npx.cmd supabase db push --linked
+npx.cmd supabase functions deploy student-login --use-api
 ```
 
 The project reference is the 20 letters at the start of your project URL.
@@ -60,7 +59,7 @@ The project reference is the 20 letters at the start of your project URL.
   "studentNumber": "N02612345X",
   "name": "Alex Taylor",
   "programmeCode": "SCS",
-  "programmeName": "Computer Science",
+  "programmeName": "BSc Hons in Computer Science",
   "academicYear": "2026",
   "part": 1,
   "semester": 1,
@@ -127,40 +126,37 @@ student pages, and even if they forced the request, the database would refuse it
 
 ```sh
 draft  ->  submitted  ->  approved  ->  published
-(admin only, invisible)                 (copied to the table students can read)
 ```
 
 ## Demonstration
 
-Use two browser windows, one normal and one private/incognito, because one browser holds
+Two browser windows, one normal and one private/incognito, because one browser holds
 only one Supabase login at a time.
 
 1. **Student window** - open `/login`, sign in, look at the dashboard. Open *Registration*,
-   tick CS101 and CS102, press Submit.
+   tick SCS1101 and SCS1102, press Submit (course checkboxes lock once registered or submitted to prevent accidental edits).
 2. **Admin window** - open `/staff/login`, sign in. On *Registrations* approve both requests.
-   (Approving is what enrols the student.)
-3. **Marks & results** - choose CS101, enter a score for the student, press Submit, then
+   (Approving is what enrols the student; admins can also Reverse or Reopen if a student selected the wrong courses).
+3. **Marks & results** - choose SCS1S01, enter a score for the student, press Submit, then
    Approve, type a grade such as `B`, press Publish.
 4. **Resources** - add a title and an https link, tick *Show to enrolled students*.
 5. **Student window** - refresh. *My courses* now lists the enrolled courses, *Results*
    shows the published grade, *Study room* shows the link.
-6. **Show the security** - as the student, try opening `/staff` (you are sent back). In
+6. **Security** - as the student, try opening `/staff` (you are sent back). In
    Supabase's table editor, point out that the data lives in real tables.
 
-## Documentation & Defense Preparation
+## Documentation
 
-For in-depth guides, presentation resources, and defense FAQs, refer to the documentation in [`doc/`](doc/):
+For an in depth guide refer to the documentation in [`doc/`](doc/):
 
 - **[Setup &amp; Deployment Guide](doc/Setup.md)**: Full steps for Supabase database setup and Vercel hosting.
-- **[Presenter Notes &amp; Demo Script](doc/presenter_notes.md)**: Presentation outline, timeline, and dual-window live demo walkthrough.
-- **[Questions You May Be Asked](doc/questions_you_may_be_asked.md)**: Technical, architectural, and security answers for defense preparation.
 
 ## Proposed Future Work
 
 - **Administrative Management Interfaces**: UI screens for staff to schedule academic terms, manage course offerings, create assessments, and publish exam timetables directly from the portal.
-- **Automated Academic Grading & GPA**: Automated calculation of weighted course marks and Grade Point Averages (GPA) upon exam score publishing.
-- **Interactive Coursework Modules**: Online coursework submission and rubric-based feedback delivery directly within the portal.
-- **Payment Gateway Integration**: Self-service student tuition and fee payment processing via external payment gateways (e.g., Stripe, Paynow) with automated receipt generation.
+- **Automated Academic Grading & GPA**: Automated calculation of weighted course marks upon exam mark publishing.
+- **Interactive Coursework Modules**: Online coursework submission and feedback delivery directly within the portal.
+- **Payment Gateway Integration**: Self service student tuition and fee payment processing via external payment gateways (e.g., Stripe, Paynow) with automated receipt generation.
 
 ---
 
