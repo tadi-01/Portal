@@ -34,10 +34,10 @@ Open http://localhost:5173. To check that everything compiles: `npm run build`.
 2. Install the tables, rules and functions:
 
 ```powershell
-npx.cmd supabase login
-npx.cmd supabase link --project-ref <your-project-reference>
-npx.cmd supabase db push --linked
-npx.cmd supabase functions deploy student-login --use-api
+npx supabase login
+npx supabase link --project-ref <your-project-reference>
+npx supabase db push --linked
+npx supabase functions deploy student-login --use-api
 ```
 
 The project reference is the 20 letters at the start of your project URL.
@@ -56,7 +56,7 @@ The project reference is the 20 letters at the start of your project URL.
 ```json
 {
   "email": "student@example.com",
-  "password": "Password123!",
+  "password": "student123",
   "studentNumber": "N02612345X",
   "name": "Alex Taylor",
   "programmeCode": "SCS",
