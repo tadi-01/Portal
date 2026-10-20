@@ -52,7 +52,7 @@ export async function studentSignIn(studentNumber: string, password: string) {
 }
 
 export async function readStudentData() {
-  const [courses, offerings, enrollments, results, transactions, resources, exams] =
+  const [courses, offerings, enrollments, results, transactions, resources, exams, assessments, marks] =
     await Promise.all([
       readTable('courses'),
       readTable('course_offerings'),
@@ -61,6 +61,8 @@ export async function readStudentData() {
       readTable('account_transactions'),
       readTable('resources'),
       readTable('exam_sessions'),
+      readTable('assessments'),
+      readTable('marks'),
     ])
-  return { courses, offerings, enrollments, results, transactions, resources, exams }
+  return { courses, offerings, enrollments, results, transactions, resources, exams, assessments, marks }
 }

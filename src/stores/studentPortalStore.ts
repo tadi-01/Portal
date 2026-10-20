@@ -26,6 +26,13 @@ export interface Result {
   grade: string
   score: number | null
 }
+export interface CourseworkMark {
+  id: string
+  courseCode: string
+  courseName: string
+  assessmentLabel: string
+  score: number
+}
 const emptyStudent = () => ({
   name: '',
   studentNumber: '',
@@ -46,6 +53,7 @@ export const useStudentPortalStore = defineStore('studentPortal', () => {
   const courses = ref<Course[]>([])
   const usdPayments = ref<Payment[]>([])
   const examResults = ref<Result[]>([])
+  const courseworkMarks = ref<CourseworkMark[]>([])
   const resources = ref<Row<'resources'>[]>([])
   const exams = ref<Row<'exam_sessions'>[]>([])
   const loading = ref(false)
@@ -61,6 +69,7 @@ export const useStudentPortalStore = defineStore('studentPortal', () => {
     courses.value = []
     usdPayments.value = []
     examResults.value = []
+    courseworkMarks.value = []
     resources.value = []
     exams.value = []
   }
@@ -128,6 +137,23 @@ export const useStudentPortalStore = defineStore('studentPortal', () => {
           score: r.score,
         }
       })
+      courseworkMarks.value = data.marks
+        .filter((m) => {
+          const a = data.assessments.find((a) => a.id === m.assessment_id)
+          return a?.kind === 'coursework'
+        })
+        .map((m) => {
+          const enr = data.enrollments.find((e) => e.id === m.enrollment_id)
+          const info = courseFor(enr?.offering_id ?? '')
+          const a = data.assessments.find((a) => a.id === m.assessment_id)!
+          return {
+            id: m.id,
+            courseCode: info.code,
+            courseName: info.name,
+            assessmentLabel: a.label,
+            score: Number(m.score),
+          }
+        })
       const transactions = data.transactions
         .sort((a, b) => b.occurred_on.localeCompare(a.occurred_on) || b.id.localeCompare(a.id))
         .map((t) => ({
@@ -248,6 +274,7 @@ export const useStudentPortalStore = defineStore('studentPortal', () => {
     courses,
     usdPayments,
     examResults,
+    courseworkMarks,
     resources,
     exams,
     isAuthenticated,

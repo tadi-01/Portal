@@ -1,4 +1,4 @@
-﻿-- Fieldnotes final-state baseline for a fresh Supabase database.
+-- Fieldnotes final-state baseline for a fresh Supabase database.
 -- Creates the final admin/student authorization model directly.
 
 -- Development foundation. No fixture/personal data and no public signup provisioning.
@@ -192,8 +192,19 @@ create policy term_access on fieldnotes.academic_terms for select to authenticat
   using (exists (select 1 from fieldnotes.course_offerings o where o.term_id = fieldnotes.academic_terms.id));
 create policy assessment_staff on fieldnotes.assessments for select to authenticated
   using (fieldnotes_private.assigned(offering_id, array['admin']));
+create policy assessment_student on fieldnotes.assessments for select to authenticated
+  using (fieldnotes_private.enrolled(offering_id));
 create policy marks_staff on fieldnotes.marks for select to authenticated
   using (fieldnotes_private.assigned(offering_id, array['admin']));
+create policy marks_student on fieldnotes.marks for select to authenticated
+  using (
+    state = 'approved'
+    and exists (
+      select 1 from fieldnotes.enrollments
+      where id = fieldnotes.marks.enrollment_id
+        and student_id = fieldnotes_private.student_id()
+    )
+  );
 create policy results_self on fieldnotes.released_results for select to authenticated
   using (fieldnotes_private.owns_enrollment(enrollment_id));
 create policy transactions_self on fieldnotes.account_transactions for select to authenticated
