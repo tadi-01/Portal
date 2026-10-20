@@ -1,19 +1,22 @@
 <script setup lang="ts">
-// ADMIN PAGE - three jobs only:
+// ADMIN PAGE - four jobs only:
 //   1. Registrations: approve or reject a student's course choices
 //   2. Marks:         enter a mark, then move it through submit -> approve -> publish
 //   3. Resources:     add or delete a study link for a course
+//   4. Settings:      switch registration, grading and result publication on or off
 // Every button calls a function that lives INSIDE the database (supabase.rpc).
 // The database checks the user is an admin, so hiding buttons here is only for looks.
 import { onMounted, ref, watch, computed } from 'vue'
 import { getSupabaseClient } from '@/lib/supabase'
 import { readTable, type Row } from '@/services/portal'
 
-type Tab = 'registrations' | 'marks' | 'resources'
+
+type Tab = 'registrations' | 'marks' | 'resources' | 'settings'
 const tabs: { id: Tab; label: string }[] = [
   { id: 'registrations', label: 'Registrations' },
   { id: 'marks', label: 'Marks & results' },
   { id: 'resources', label: 'Resources' },
+  { id: 'settings', label: 'Settings' },
 ]
 const activeTab = ref<Tab>('registrations')
 
@@ -45,6 +48,9 @@ const grades = ref<Record<string, string>>({}) // grade typed for each mark befo
 const title = ref('')
 const url = ref('')
 const published = ref(false)
+const gradeCalculation = ref(false)
+const resultPublication = ref(false)
+const registrationSubmission = ref(false)
 
 // Page status
 const loading = ref(false)
@@ -95,6 +101,15 @@ async function refresh() {
       ])
     const requests = await getSupabaseClient().rpc('admin_registration_requests')
     registrationRequests.value = requests.data ?? []
+        // The settings table is private, so read each switch through registry_capability()
+    const [grade, results, registration] = await Promise.all([
+      getSupabaseClient().rpc('registry_capability', { capability: 'grade_calculation' }),
+      getSupabaseClient().rpc('registry_capability', { capability: 'result_publication' }),
+      getSupabaseClient().rpc('registry_capability', { capability: 'registration_submission' }),
+    ])
+    gradeCalculation.value = grade.data ?? false
+    resultPublication.value = results.data ?? false
+    registrationSubmission.value = registration.data ?? false
     if (!offerings.value.some((o) => o.id === offering.value))
       offering.value = offerings.value[0]?.id ?? ''
     await loadRoster()
@@ -200,6 +215,18 @@ const deleteResource = (resource: Row<'resources'>) =>
     () => getSupabaseClient().rpc('admin_delete_resource', { target_resource: resource.id }),
     'Resource deleted.',
   )
+
+  // 4. SETTINGS - the three registry switches that unlock registration, grading and publishing
+const saveSettings = () =>
+  perform(
+    () =>
+      getSupabaseClient().rpc('admin_save_registry_configuration', {
+        enable_grade_calculation: gradeCalculation.value,
+        enable_result_publication: resultPublication.value,
+        enable_registration_submission: registrationSubmission.value,
+      }),
+    'Settings saved.',
+  )
 </script>
 
 <template>
@@ -275,7 +302,7 @@ const deleteResource = (resource: Row<'resources'>) =>
     </section>
 
     <!-- Marks and resources belong to one course, so choose the course first -->
-    <template v-if="activeTab !== 'registrations'">
+      <template v-if="activeTab === 'marks' || activeTab === 'resources'">
       <div class="staff-form staff-selector">
         <label for="offering">Course</label>
         <select id="offering" v-model="offering" :disabled="loading || busy">
@@ -401,8 +428,28 @@ const deleteResource = (resource: Row<'resources'>) =>
         <button class="btn btn--primary" :disabled="busy">Add resource</button>
       </form>
     </section>
+
+    <!-- Registry settings apply to the whole portal, so no course needs to be selected -->
+    <section v-if="activeTab === 'settings'" class="personal-record">
+      <h2>Registry settings</h2>
+      <p>These switches control what students and staff are allowed to do.</p>
+      <form class="staff-form" @submit.prevent="saveSettings">
+        <label class="staff-checkbox">
+          <input v-model="registrationSubmission" type="checkbox" /> Students can submit
+          registration
+        </label>
+        <label class="staff-checkbox">
+          <input v-model="resultPublication" type="checkbox" /> Staff can publish results
+        </label>
+        <label class="staff-checkbox">
+          <input v-model="gradeCalculation" type="checkbox" /> Grade calculation enabled
+        </label>
+        <button class="btn btn--primary" :disabled="busy">Save settings</button>
+      </form>
+    </section>
   </div>
 </template>
+
 
 <style scoped>
 .staff-tabs {
